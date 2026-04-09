@@ -227,11 +227,12 @@ const SettingsView = {
         msg.textContent = 'Failed to save. Please try again.';
       } else {
         msg.className = 'settings-msg settings-msg-success';
-        msg.textContent = '✓ Settings saved successfully.';
+        msg.textContent = '✓ Saved! Your household settings have been updated.';
       }
       btn.disabled = false;
       btn.textContent = 'Save changes';
-      setTimeout(() => msg.classList.add('hidden'), 3000);
+      msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => msg.classList.add('hidden'), 4000);
     });
 
     // Change password toggle

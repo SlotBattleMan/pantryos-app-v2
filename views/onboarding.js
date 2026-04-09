@@ -215,6 +215,7 @@ const OnboardingView = {
 
     const { error } = await DB.saveHousehold(user.id, {
       name: this.data.name,
+      zip_code: this.data.zip_code || null,
       people: this.data.people,
       kids: this.data.kids,
       dietary: this.data.dietary,

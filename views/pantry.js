@@ -280,6 +280,10 @@ Cheddar cheese"></textarea>
     const item = { tempId, name, category, quantity };
     this.newItems.push(item);
 
+    // Hide empty state as soon as first item is added
+    const emptyState = document.querySelector('.empty-state');
+    if (emptyState) emptyState.style.display = 'none';
+
     const section = document.getElementById('new-items-section');
     section.classList.remove('hidden');
     document.getElementById('new-count').textContent = this.newItems.length;
