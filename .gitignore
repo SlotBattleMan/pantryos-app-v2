@@ -1,1 +1,2 @@
-config.js
+# No secrets here — config.js has openaiKey: null
+# Do not ignore config.js
