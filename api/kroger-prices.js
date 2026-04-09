@@ -18,8 +18,12 @@ async function getKrogerToken() {
     body: 'grant_type=client_credentials&scope=product.compact',
   });
 
-  if (!res.ok) return null;
-  const data = await res.json();
+  const responseText = await res.text();
+  if (!res.ok) {
+    console.error('Kroger token error:', res.status, responseText);
+    return { error: res.status + ' ' + responseText };
+  }
+  const data = JSON.parse(responseText);
   return data.access_token || null;
 }
 
@@ -73,12 +77,17 @@ export default async function handler(req, res) {
 
   // Get token
   const token = await getKrogerToken();
-  if (!token) {
+  if (!token || typeof token === 'object') {
     const hasId = !!process.env.KROGER_CLIENT_ID;
     const hasSecret = !!process.env.KROGER_CLIENT_SECRET;
     return res.status(503).json({
       error: hasId && hasSecret ? 'Kroger OAuth token request failed' : 'Kroger credentials not configured',
-      debug: { hasClientId: hasId, hasClientSecret: hasSecret },
+      debug: {
+        hasClientId: hasId,
+        hasClientSecret: hasSecret,
+        krogerError: typeof token === 'object' ? token.error : null,
+        clientIdPrefix: hasId ? process.env.KROGER_CLIENT_ID.substring(0, 12) + '...' : null,
+      },
       prices: {}
     });
   }
