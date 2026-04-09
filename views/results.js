@@ -104,33 +104,60 @@ const ResultsView = {
     });
   },
 
-  openStoreSearch(store, itemNames, items) {
-    const storeUrls = {
-      'Walmart': `https://www.walmart.com/search?q=${encodeURIComponent((items||[]).slice(0,3).map(i=>i.name).join(' '))}`,
-      'Whole Foods': `https://www.wholefoodsmarket.com/search?text=${encodeURIComponent((items||[]).slice(0,3).map(i=>i.name).join(' '))}`,
-      'Instacart': `https://www.instacart.com/store/s?k=${encodeURIComponent((items||[]).slice(0,3).map(i=>i.name).join(' '))}`,
+  getStoreItemUrl(store, itemName) {
+    const q = encodeURIComponent(itemName);
+    const map = {
+      'ShopRite':      `https://www.shoprite.com/sm/planning/rsid/3000/results?q=${q}`,
+      'Stop & Shop':   `https://stopandshop.com/pages/search-results/index.html#q=${q}&t=product`,
+      'Wegmans':       `https://www.wegmans.com/search/#q=${q}&t=product`,
+      'Acme Markets':  `https://www.acmemarkets.com/shop/search-results.html?q=${q}`,
+      'Instacart':     `https://www.instacart.com/store/s?k=${q}`,
+      'Walmart':       `https://www.walmart.com/search?q=${q}`,
+      'Whole Foods':   `https://www.wholefoodsmarket.com/search?text=${q}`,
     };
+    return map[store] || `https://www.google.com/search?q=${encodeURIComponent(store + ' ' + itemName)}`;
+  },
 
-    const url = storeUrls[store] || `https://www.google.com/search?q=${encodeURIComponent(store + ' grocery order ' + (items||[]).slice(0,5).map(i=>i.name).join(' '))}`;
+  openStoreSearch(store, itemNames, items) {
+    const allItems = items || [];
 
-    // Show store action modal
+    // Build per-item search links for this store
+    const itemLinks = allItems.map(i => {
+      const url = this.getStoreItemUrl(store, i.name);
+      const qty = i.quantity > 1 ? ` <span class="item-qty">×${i.quantity}</span>` : '';
+      return `
+        <a href="${url}" target="_blank" rel="noopener" class="store-item-link">
+          <span class="store-item-name">${i.name}${qty}</span>
+          <span class="store-item-search">Search →</span>
+        </a>`;
+    }).join('');
+
+    // Also build a single "search all" URL using the first item as entry point
+    const firstUrl = this.getStoreItemUrl(store, allItems[0]?.name || 'groceries');
+
     const modal = document.createElement('div');
     modal.className = 'store-modal-overlay';
     modal.innerHTML = `
-      <div class="store-modal">
-        <h3>Ready to shop at ${store}?</h3>
-        <p>Your basket has ${(items||[]).length} items. We'll open ${store} in a new tab — your list is below for reference.</p>
-        <div class="store-item-list">
-          ${(items||[]).map(i => `<div class="store-list-item">• ${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ''}</div>`).join('')}
+      <div class="store-modal store-modal-wide">
+        <div class="store-modal-header">
+          <div>
+            <h3>Shop at ${store}</h3>
+            <p class="store-modal-sub">${allItems.length} items — click each to search on ${store}'s site</p>
+          </div>
+          <button class="modal-close-btn" id="modal-cancel">✕</button>
         </div>
-        <div class="store-modal-actions">
-          <button class="btn-ghost" id="modal-cancel">Cancel</button>
-          <a href="${url}" target="_blank" rel="noopener" class="btn-primary">Open ${store} →</a>
+        <div class="store-item-links">
+          ${itemLinks}
+        </div>
+        <div class="store-modal-footer">
+          <button class="btn-ghost" id="modal-cancel2">Close</button>
+          <a href="${firstUrl}" target="_blank" rel="noopener" class="btn-primary">Open ${store} website →</a>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
     document.getElementById('modal-cancel').addEventListener('click', () => modal.remove());
+    document.getElementById('modal-cancel2').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   },
 
@@ -200,7 +227,7 @@ const ResultsView = {
 
   mockPrice(mult = 1) { return (Math.random() * 8 + 2 * mult).toFixed(2); },
   mockTotal(mode) { const b = { cheapest: 78, balanced: 94, easiest: 112 }; return (b[mode] + Math.floor(Math.random() * 10)).toFixed(2); },
-  mockStore(mode) { return { cheapest: 'Walmart', balanced: 'Whole Foods', easiest: 'Instacart' }[mode]; },
+  mockStore(mode) { return { cheapest: 'ShopRite', balanced: 'Wegmans', easiest: 'Instacart' }[mode]; },
   mockHighlights(mode) {
     return {
       cheapest: ['Lowest total spend', 'Store-brand substitutions', 'May require 2+ stops'],

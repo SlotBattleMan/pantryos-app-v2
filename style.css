@@ -1398,24 +1398,103 @@ body {
 .store-modal {
   background: var(--surface);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: 28px;
   max-width: 480px;
   width: 100%;
   box-shadow: var(--shadow-lg);
 }
 
+.store-modal-wide {
+  max-width: 560px;
+}
+
+.store-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
 .store-modal h3 {
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-.store-modal p {
-  font-size: 14px;
+.store-modal-sub {
+  font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 16px;
+  margin: 0;
 }
 
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+.modal-close-btn:hover { background: var(--surface-2); }
+
+.store-item-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.store-item-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text);
+  transition: background 0.15s;
+  border: 1px solid var(--border);
+}
+.store-item-link:hover {
+  background: var(--teal-light);
+  border-color: var(--teal);
+}
+.store-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+.item-qty {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 4px;
+}
+.store-item-search {
+  font-size: 12px;
+  color: var(--teal);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.store-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.store-modal-footer a.btn-primary,
+.store-modal-footer a.btn-ghost {
+  text-decoration: none;
+}
+
+/* Legacy - keep for any old code paths */
 .store-item-list {
   background: var(--bg);
   border-radius: var(--radius-sm);
@@ -1424,19 +1503,16 @@ body {
   overflow-y: auto;
   margin-bottom: 20px;
 }
-
 .store-list-item {
   font-size: 13px;
   color: var(--text-muted);
   padding: 3px 0;
 }
-
 .store-modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
-
 .store-modal-actions a.btn-primary {
   text-decoration: none;
 }
