@@ -74,7 +74,13 @@ export default async function handler(req, res) {
   // Get token
   const token = await getKrogerToken();
   if (!token) {
-    return res.status(503).json({ error: 'Kroger credentials not configured', prices: {} });
+    const hasId = !!process.env.KROGER_CLIENT_ID;
+    const hasSecret = !!process.env.KROGER_CLIENT_SECRET;
+    return res.status(503).json({
+      error: hasId && hasSecret ? 'Kroger OAuth token request failed' : 'Kroger credentials not configured',
+      debug: { hasClientId: hasId, hasClientSecret: hasSecret },
+      prices: {}
+    });
   }
 
   // Find nearest store
