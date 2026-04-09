@@ -162,7 +162,7 @@ JSON format: {cheapest:{total,store,highlights[3],items[{name,price}]}, balanced
 
     const data = await openaiRes.json();
     const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error('No content from OpenAI');
+    if (!content) throw new Error(`No content from OpenAI. Response: ${JSON.stringify(data).substring(0,300)}`);
 
     const result = JSON.parse(content);
     result.livePrices = hasLivePrices;
