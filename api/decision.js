@@ -58,6 +58,10 @@ async function getNJPrices(items) {
 }
 
 export default async function handler(req, res) {
+  // Health check
+  if (req.method === 'GET') {
+    return res.status(200).json({ ok: true, env: { hasOpenAI: !!process.env.OPENAI_API_KEY, hasSupabase: !!process.env.SUPABASE_URL } });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -166,6 +170,6 @@ JSON format: {cheapest:{total,store,highlights[3],items[{name,price}]}, balanced
     return res.status(200).json(result);
   } catch (err) {
     console.error('Decision engine error:', err.message);
-    return res.status(500).json({ error: 'Engine error', mock: true });
+    return res.status(500).json({ error: 'Engine error', detail: err.message, mock: true });
   }
 }
