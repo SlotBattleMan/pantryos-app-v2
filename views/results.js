@@ -14,7 +14,10 @@ const ResultsView = {
                 <h1>Your optimal basket</h1>
                 <p class="header-sub">
                   ${items?.length || 0} items · ${this.getTimestamp()}
-                  ${result?.livePrices ? '<span class="live-prices-badge">● Live Kroger prices</span>' : '<span class="estimated-prices-badge">Estimated prices</span>'}
+                  ${result?.livePrices
+                    ? `<span class="live-prices-badge">● Live NJ prices${result.cacheAgeHours != null ? ' · updated ' + result.cacheAgeHours + 'h ago' : ''}</span>`
+                    : '<span class="estimated-prices-badge">Estimated prices</span>'
+                  }
                 </p>
               </div>
             </div>

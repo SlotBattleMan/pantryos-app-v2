@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cache-prices",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

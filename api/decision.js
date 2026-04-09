@@ -1,5 +1,5 @@
-// PantryOS — Vercel serverless function for decision engine
-// Fetches real Kroger prices first, then feeds them to GPT-4o
+// PantryOS — Decision engine
+// Pulls NJ store prices from cache, feeds into GPT-4o for basket recommendations
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,44 +16,52 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing items or household' });
   }
 
-  // --- Step 1: Try to fetch real Kroger prices ---
-  let krogerPrices = {};
-  let krogerLocationId = null;
+  // --- Step 1: Fetch cached NJ store prices ---
+  let storeBaskets = {};
   let hasLivePrices = false;
+  let cacheAgeHours = null;
 
-  const zipCode = household.zip_code;
-  if (zipCode && process.env.KROGER_CLIENT_ID && process.env.KROGER_CLIENT_SECRET) {
-    try {
-      const krogerRes = await fetch(`${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/api/kroger-prices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, zipCode }),
-      });
-      if (krogerRes.ok) {
-        const krogerData = await krogerRes.json();
-        if (krogerData.prices && Object.keys(krogerData.prices).length > 0) {
-          krogerPrices = krogerData.prices;
-          krogerLocationId = krogerData.locationId;
-          hasLivePrices = true;
-        }
+  try {
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host;
+    const priceRes = await fetch(`${proto}://${host}/api/store-prices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    if (priceRes.ok) {
+      const priceData = await priceRes.json();
+      if (priceData.hasData) {
+        storeBaskets = priceData.storeBaskets;
+        hasLivePrices = true;
+        cacheAgeHours = priceData.cacheAgeHours;
       }
-    } catch (e) {
-      console.warn('Kroger price fetch failed, continuing without live prices:', e.message);
     }
+  } catch (e) {
+    console.warn('Store price lookup failed:', e.message);
   }
 
-  // --- Step 2: Build prompt with real prices if available ---
+  // --- Step 2: Build enriched item list for prompt ---
   const itemList = items.map(i => {
-    const kroger = krogerPrices[i.name];
-    const priceNote = kroger
-      ? ` [Kroger price: $${kroger.price}${kroger.promo ? ' (on sale, regular $' + kroger.regular + ')' : ''}${kroger.size ? ', ' + kroger.size : ''}]`
-      : '';
-    return `- ${i.name} (qty: ${i.quantity || 1}${i.category ? ', ' + i.category : ''}${priceNote})`;
+    const storePrices = Object.entries(storeBaskets)
+      .map(([store, basket]) => {
+        const found = basket.items?.find(bi => bi.name === i.name);
+        return found ? `${store}: $${found.price}` : null;
+      })
+      .filter(Boolean)
+      .join(', ');
+
+    return `- ${i.name} (qty: ${i.quantity || 1}${i.category ? ', ' + i.category : ''}${storePrices ? ' | prices: ' + storePrices : ''})`;
   }).join('\n');
 
-  const livePriceNote = hasLivePrices
-    ? `\nREAL KROGER PRICES: You have live pricing data from a nearby Kroger store for ${Object.keys(krogerPrices).length}/${items.length} items. Use these exact prices for the "cheapest" basket total. For items without Kroger prices, estimate realistically.`
-    : '\nNo live pricing data available — estimate realistic current prices.';
+  // Build store totals summary for prompt
+  const storeSummary = Object.entries(storeBaskets).map(([store, b]) =>
+    `${store}: $${b.total} (${b.coverage}% items matched)`
+  ).join(', ');
+
+  const priceNote = hasLivePrices
+    ? `\nREAL NJ STORE PRICES (cached within ${cacheAgeHours || '?'} hours): ${storeSummary}. Use these exact totals. For unmatched items, estimate realistically.`
+    : '\nNo cached store prices available — estimate realistic NJ grocery prices.';
 
   const prompt = `
 Household: ${household.name}
@@ -61,23 +69,23 @@ People: ${household.people} (${household.kids || 0} kids under 12)
 Dietary needs: ${(household.dietary || ['None']).join(', ')}
 Weekly budget: ${household.budget || 'Not specified'}
 Default mode: ${household.default_mode || 'balanced'}
-ZIP code: ${zipCode || 'Not provided'}
-${livePriceNote}
+Location: New Jersey
+${priceNote}
 
 Items needed:
 ${itemList}
 
-Return three basket options:
-1. "cheapest" — Kroger/Walmart, use real Kroger prices where provided
-2. "balanced" — Best quality-value, e.g. Whole Foods or Target
-3. "easiest" — Instacart or Amazon Fresh, same-day delivery
+Return exactly three basket options for NJ shoppers:
+1. "cheapest" — lowest total cost (ShopRite or best-priced NJ store)
+2. "balanced" — best quality-value (Wegmans or Stop & Shop)
+3. "easiest" — most convenient (Instacart delivery from nearest store)
 
-Each option: total (dollar string), store (name), highlights (3 strings), items (array of {name, price as string}).
-Top-level: confidence (0-100), reasoning (1 sentence), livePrices (boolean: ${hasLivePrices}).
+For each option: total (dollar string), store (NJ store name), highlights (3 short strings), items (array of {name, price as string}).
+Top-level fields: confidence (0-100 int), reasoning (1 sentence), livePrices (boolean: ${hasLivePrices}).
 Return only valid JSON, no markdown.
   `.trim();
 
-  // --- Step 3: Call GPT-4o ---
+  // --- Step 3: GPT-4o ---
   try {
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -90,7 +98,7 @@ Return only valid JSON, no markdown.
         messages: [
           {
             role: 'system',
-            content: `You are PantryOS, a household buying intelligence engine. Given grocery items with optional real store prices, return a JSON object with three basket options: cheapest, balanced, and easiest. Each option has: total (dollar amount as string), store (store name), highlights (array of 3 short benefit strings), items (array of objects with name and price as strings), and confidence (0-100 integer). Also include top-level: reasoning (1 sentence string), livePrices (boolean). Return only valid JSON, no markdown.`,
+            content: `You are PantryOS, a household buying intelligence engine for New Jersey shoppers. The four main NJ grocery chains are ShopRite, Stop & Shop, Wegmans, and Acme Markets. When given real cached prices, use them precisely. Return only valid JSON with three basket options: cheapest, balanced, easiest. Each has: total (string), store (string), highlights (array of 3 strings), items (array of {name, price}). Top-level: confidence (int), reasoning (string), livePrices (boolean).`,
           },
           { role: 'user', content: prompt },
         ],
@@ -104,10 +112,8 @@ Return only valid JSON, no markdown.
     if (!content) throw new Error('No content from OpenAI');
 
     const result = JSON.parse(content);
-    // Ensure livePrices flag is set correctly
     result.livePrices = hasLivePrices;
-    result.krogerLocationId = krogerLocationId;
-
+    result.cacheAgeHours = cacheAgeHours;
     return res.status(200).json(result);
   } catch (err) {
     console.error('Decision engine error:', err.message);
