@@ -2,10 +2,21 @@
 // Fetches prices from ShopRite, Stop & Shop, Wegmans, Acme for ~150 common items
 // Runs nightly via Vercel cron. Results stored in Supabase price_cache table.
 
-import { createClient } from '@supabase/supabase-js';
-
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cwqzcfrgbvxerhgwsnhx.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD';
+
+async function upsertPrice(store, itemName, price, unit, brand) {
+  await fetch(`${SUPABASE_URL}/rest/v1/price_cache`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ store, item_name: itemName, price, unit, brand, updated_at: new Date().toISOString() }),
+  });
+}
 
 // NJ Store IDs / configs
 const STORES = {
@@ -133,17 +144,7 @@ async function priceItem(storeKey, item) {
 }
 
 // --- Upsert prices into Supabase ---
-async function upsertPrices(sb, store, item, result) {
-  if (!result?.price) return;
-  await sb.from('price_cache').upsert({
-    store,
-    item_name: item,
-    price: result.price,
-    unit: result.unit || null,
-    brand: result.brand || null,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'store,item_name' });
-}
+// upsertPrices now uses the REST upsertPrice helper above
 
 export default async function handler(req, res) {
   // Verify cron secret to prevent unauthorized runs
@@ -151,8 +152,6 @@ export default async function handler(req, res) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && req.method !== 'GET') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const results = { success: 0, failed: 0, stores: {} };
 
@@ -167,7 +166,7 @@ export default async function handler(req, res) {
       await Promise.all(batch.map(async (item) => {
         const result = await priceItem(storeKey, item);
         if (result?.price) {
-          await upsertPrices(sb, STORES[storeKey].name, item, result);
+          await upsertPrice(STORES[storeKey].name, item, result.price, result.unit || null, result.brand || null);
           results.stores[storeKey].success++;
           results.success++;
         } else {

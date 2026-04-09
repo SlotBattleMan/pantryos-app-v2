@@ -125,8 +125,8 @@ const SettingsView = {
           </div>
         </div>
 
-        <div id="settings-msg" class="settings-msg hidden"></div>
         <button class="btn-primary" id="save-settings-btn">Save changes</button>
+        <div id="settings-msg" class="settings-msg hidden"></div>
 
         <!-- Account -->
         <div class="settings-card settings-card-danger">
