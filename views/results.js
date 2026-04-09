@@ -12,7 +12,10 @@ const ResultsView = {
               <button class="btn-ghost btn-back" id="back-btn">← Back to pantry</button>
               <div>
                 <h1>Your optimal basket</h1>
-                <p class="header-sub">${items?.length || 0} items · ${this.getTimestamp()}</p>
+                <p class="header-sub">
+                  ${items?.length || 0} items · ${this.getTimestamp()}
+                  ${result?.livePrices ? '<span class="live-prices-badge">● Live Kroger prices</span>' : '<span class="estimated-prices-badge">Estimated prices</span>'}
+                </p>
               </div>
             </div>
 

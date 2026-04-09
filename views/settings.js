@@ -72,6 +72,10 @@ const SettingsView = {
             <label>Household name</label>
             <input type="text" id="s-name" value="${h.name || ''}" placeholder="The Smith Family" />
           </div>
+          <div class="form-group">
+            <label>ZIP code <span class="label-hint">(enables live Kroger pricing)</span></label>
+            <input type="text" id="s-zip" value="${h.zip_code || ''}" placeholder="e.g. 07675" maxlength="5" style="max-width:160px" />
+          </div>
           <div class="settings-row">
             <div class="form-group flex-grow">
               <label>People in household</label>
@@ -209,6 +213,7 @@ const SettingsView = {
 
       const { error } = await DB.saveHousehold(this.user.id, {
         name: document.getElementById('s-name').value || 'My Household',
+        zip_code: document.getElementById('s-zip').value.trim() || null,
         people,
         kids,
         dietary: selectedDietary.length ? selectedDietary : ['None'],

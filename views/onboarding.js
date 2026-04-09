@@ -39,6 +39,10 @@ const OnboardingView = {
           <input type="text" id="household-name" placeholder="The Smith Family" value="${this.data.name || ''}" />
         </div>
         <div class="form-group">
+          <label>ZIP code <span class="label-hint">(enables live Kroger grocery pricing)</span></label>
+          <input type="text" id="household-zip" placeholder="e.g. 07675" maxlength="5" value="${this.data.zip_code || ''}" style="max-width:160px" />
+        </div>
+        <div class="form-group">
           <label>Number of people</label>
           <div class="counter-row">
             <button class="counter-btn" id="dec-people">−</button>
@@ -67,6 +71,7 @@ const OnboardingView = {
 
       document.getElementById('next-btn').onclick = () => {
         this.data.name = document.getElementById('household-name').value || 'My Household';
+        this.data.zip_code = document.getElementById('household-zip').value.trim() || null;
         this.data.people = people;
         this.data.kids = kids;
         this.nextStep();
