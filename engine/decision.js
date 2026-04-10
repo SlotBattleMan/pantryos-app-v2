@@ -60,9 +60,10 @@ const DecisionEngine = {
     };
 
     const estimatePrice = (item, mult = 1) => {
+      // Returns base unit price only — quantity is applied by buildItems
       const range = categoryPrices[item.category] || [2, 8];
       const base = range[0] + Math.random() * (range[1] - range[0]);
-      return parseFloat((base * mult * (item.quantity || 1)).toFixed(2));
+      return parseFloat((base * mult).toFixed(2));
     };
 
     // Default brands for common items when cache has no data
@@ -86,32 +87,41 @@ const DecisionEngine = {
     // Brand preferences from household profile
     const brandPrefs = household.brand_preferences || {};
 
-    // Build item lists per basket — prefer cached prices
+    // Generate ONE base price per item (random only called once, then scaled)
+    // This prevents bananas being $0.59 on cheapest and $8.29 on easiest
+    const basePrices = {};
+    items.forEach(item => {
+      const shopRiteCached = cachedPrices['ShopRite']?.items?.find(
+        i => i.name.toLowerCase() === item.name.toLowerCase()
+      );
+      // Use ShopRite cached price as base if available, otherwise estimate once
+      basePrices[item.name] = shopRiteCached
+        ? parseFloat(shopRiteCached.price)
+        : estimatePrice(item, 1.0); // base multiplier = 1.0, scale below
+    });
+
     const buildItems = (store, mult) => items.map(item => {
+      // Try store-specific cached price first
       const storeData = cachedPrices[store];
       const cachedItem = storeData?.items?.find(i => i.name.toLowerCase() === item.name.toLowerCase());
       const price = cachedItem
         ? parseFloat(cachedItem.price)
-        : estimatePrice(item, mult);
-      // Preferred brand: user preference > cache brand > default brand
+        : parseFloat((basePrices[item.name] * mult * (item.quantity || 1)).toFixed(2));
+
       const prefBrand = brandPrefs[item.name.toLowerCase()];
       const brand = (prefBrand && prefBrand !== 'any') ? prefBrand : getBrand(item.name);
       return { name: item.name, price: price.toFixed(2), ...(brand && { brand }) };
     });
 
     const cheapItems    = buildItems('ShopRite', 0.82);
-    const balancedItems = buildItems('Wegmans', 1.05);
-    const easiestItems  = items.map(item => ({
-      name: item.name,
-      price: estimatePrice(item, 1.2).toFixed(2),
-    }));
+    const balancedItems = buildItems('Wegmans', 1.08);
+    const easiestItems  = buildItems('Instacart', 1.22); // Instacart markup
 
+    // ALWAYS sum the full item list for totals — never use partial cached totals
     const sum = arr => arr.reduce((t, i) => t + parseFloat(i.price), 0).toFixed(2);
-
-    // Use cached totals if available, otherwise sum items
-    const cheapTotal    = cachedPrices['ShopRite']?.total    || sum(cheapItems);
-    const balancedTotal = cachedPrices['Wegmans']?.total     || sum(balancedItems);
-    const easiestTotal  = cachedPrices['Stop & Shop']?.total || sum(easiestItems);
+    const cheapTotal    = sum(cheapItems);
+    const balancedTotal = sum(balancedItems);
+    const easiestTotal  = sum(easiestItems);
 
     return {
       confidence,
