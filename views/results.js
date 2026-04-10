@@ -347,8 +347,8 @@ const ResultsView = {
           await fetch('https://cwqzcfrgbvxerhgwsnhx.supabase.co/rest/v1/instacart_waitlist', {
             method: 'POST',
             headers: {
-              'apikey': 'sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD',
-              'Authorization': 'Bearer sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD',
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3cXpjZnJnYnZ4ZXJoZ3dzbmh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcwNjksImV4cCI6MjA5MTMzMzA2OX0.CH653qa1WD6GVgxzsuq9f4sHzEWKmagyygXaDG0lt6g',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3cXpjZnJnYnZ4ZXJoZ3dzbmh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcwNjksImV4cCI6MjA5MTMzMzA2OX0.CH653qa1WD6GVgxzsuq9f4sHzEWKmagyygXaDG0lt6g',
               'Content-Type': 'application/json',
               'Prefer': 'resolution=ignore-duplicates',
             },
