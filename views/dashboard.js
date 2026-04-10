@@ -4,9 +4,11 @@ const DashboardView = {
   weeklyCart: null,
 
   async render() {
-    document.querySelector('.app-shell').innerHTML = `
-      ${this.renderNav()}
-      <main class="main-content"><div class="loading-spinner"></div></main>
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${this.renderNav()}
+        <main class="main-content"><div class="loading-spinner"></div></main>
+      </div>
     `;
     this.bindNav();
     await this.loadData();
