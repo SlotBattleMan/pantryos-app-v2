@@ -408,7 +408,11 @@ Cheddar cheese"></textarea>
 
   // ─── FROZEN ───────────────────────────────────────────────────────────────
 
+  'frozen pancakes': ['Kodiak Cakes', 'Eggo', 'Pillsbury', 'Van\'s', 'Birch Benders', 'ShopRite', 'Wegmans'],
   'frozen pizza': ['DiGiorno', 'Amy\'s', 'Newman\'s Own', 'Screamin\' Sicilian', 'Freschetta', 'ShopRite', 'Wegmans'],
+  'frozen meals': ['Amy\'s', 'Healthy Choice', 'Lean Cuisine', 'Stouffer\'s', 'Birds Eye', 'ShopRite', 'Wegmans'],
+  'frozen fries': ['Ore-Ida', 'Alexia', 'McCain', 'Farm Rich', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'frozen meatballs': ['Aidells', 'Cooked Perfect', 'Carando', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
   'frozen vegetables': ['Birds Eye', 'Green Giant', 'Cascadian Farm', 'Alexia', 'ShopRite', 'Wegmans', 'Stop & Shop'],
   'ice cream': ['Häagen-Dazs', 'Breyers', 'Turkey Hill', 'Edy\'s (Dreyer\'s)', 'Ben & Jerry\'s', 'ShopRite', 'Wegmans'],
   'frozen burritos': ['Amy\'s', 'El Monterey', 'Trader Joe\'s', 'Don Miguel', 'ShopRite', 'Wegmans', 'Stop & Shop'],
@@ -447,14 +451,17 @@ Cheddar cheese"></textarea>
 
     const key = itemName.toLowerCase().trim();
 
-    // Fuzzy match — try exact first, then partial key match
+    // Match strategy: exact → key contains input → input contains key (no single-word cross-matches)
     let brands = brandOptions[key];
     if (!brands) {
-      const matchedKey = Object.keys(brandOptions).find(k =>
-        k.includes(key) || key.includes(k) ||
-        key.split(' ').some(word => word.length > 3 && k.includes(word))
-      );
-      if (matchedKey) brands = brandOptions[matchedKey];
+      // Try: library key contains the full search term
+      const exactContains = Object.keys(brandOptions).find(k => k.includes(key));
+      if (exactContains) brands = brandOptions[exactContains];
+    }
+    if (!brands) {
+      // Try: search term contains the full library key (e.g. "whole milk" → "milk")
+      const inputContains = Object.keys(brandOptions).find(k => key.includes(k) && k.length > 4);
+      if (inputContains) brands = brandOptions[inputContains];
     }
     brands = brands || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley'];
 
