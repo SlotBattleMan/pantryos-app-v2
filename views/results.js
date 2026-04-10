@@ -50,7 +50,10 @@ const ResultsView = {
                 </div>
                 ${(items || []).map((item, i) => `
                   <div class="breakdown-row">
-                    <span class="breakdown-item">${item.name}${item.quantity > 1 ? ` ×${item.quantity}` : ''}</span>
+                    <span class="breakdown-item">
+                      <span class="breakdown-item-name">${item.name}${item.quantity > 1 ? ` <span class='item-qty'>×${item.quantity}</span>` : ''}</span>
+                      ${result?.cheapest?.items?.[i]?.brand ? `<span class="breakdown-brand">${result.cheapest.items[i].brand}</span>` : ''}
+                    </span>
                     <span class="breakdown-price">$${result?.cheapest?.items?.[i]?.price || this.mockPrice(0.82)}</span>
                     <span class="breakdown-price">$${result?.balanced?.items?.[i]?.price || this.mockPrice(1.0)}</span>
                     <span class="breakdown-price">$${result?.easiest?.items?.[i]?.price || this.mockPrice(1.22)}</span>

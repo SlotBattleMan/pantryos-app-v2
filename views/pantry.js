@@ -31,6 +31,7 @@ const PantryView = {
     this.bindNav();
     await this.loadData();
     this.renderMain();
+    this.loadSuggestions(); // non-blocking
   },
 
   renderNav() {
@@ -66,6 +67,71 @@ const PantryView = {
     this.newItems = [];
   },
 
+  async loadSuggestions() {
+    try {
+      // Get past decisions
+      const { data: decisions } = await DB.getRecentDecisions(this.household.id, 10);
+      if (!decisions?.length) return;
+
+      // Extract all items from past decision result_json
+      const itemFrequency = {};
+      const today = new Date();
+      const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];
+
+      decisions.forEach(d => {
+        const result = d.result_json || {};
+        // Pull items from cheapest basket (most representative)
+        const items = result.cheapest?.items || result.balanced?.items || [];
+        items.forEach(item => {
+          const name = item.name?.toLowerCase().trim();
+          if (!name) return;
+          itemFrequency[name] = (itemFrequency[name] || 0) + 1;
+        });
+      });
+
+      // Sort by frequency, take top 8, exclude already-added items
+      const alreadyAdded = new Set([
+        ...this.items.map(i => i.name.toLowerCase()),
+        ...this.newItems.map(i => i.name.toLowerCase()),
+      ]);
+
+      const suggestions = Object.entries(itemFrequency)
+        .sort((a, b) => b[1] - a[1])
+        .filter(([name]) => !alreadyAdded.has(name))
+        .slice(0, 8)
+        .map(([name]) => name);
+
+      if (!suggestions.length) return;
+
+      // Render suggestion chips
+      const section = document.getElementById('suggestions-section');
+      const chips = document.getElementById('suggestions-chips');
+      const sub = document.getElementById('suggestions-sub');
+
+      sub.textContent = `Based on your past orders · ${dayName}`;
+      chips.innerHTML = suggestions.map(name => `
+        <button class="suggestion-chip" data-name="${name}">
+          + ${name.charAt(0).toUpperCase() + name.slice(1)}
+        </button>
+      `).join('');
+
+      section.classList.remove('hidden');
+
+      // Wire up chips
+      chips.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const name = chip.dataset.name;
+          this.addItemDirect(name.charAt(0).toUpperCase() + name.slice(1), '', 1);
+          chip.classList.add('suggestion-chip-added');
+          chip.textContent = '✓ ' + name.charAt(0).toUpperCase() + name.slice(1);
+          chip.disabled = true;
+        });
+      });
+    } catch (e) {
+      // suggestions are non-critical
+    }
+  },
+
   renderMain() {
     document.querySelector('.main-content').innerHTML = `
       <div class="pantry-content">
@@ -80,6 +146,15 @@ const PantryView = {
               Get my basket →
             </button>
           </div>
+        </div>
+
+        <!-- Smart suggestions -->
+        <div id="suggestions-section" class="suggestions-section hidden">
+          <div class="suggestions-header">
+            <span class="suggestions-label">✨ Suggested for you</span>
+            <span class="suggestions-sub" id="suggestions-sub"></span>
+          </div>
+          <div class="suggestions-chips" id="suggestions-chips"></div>
         </div>
 
         <!-- Import panel -->

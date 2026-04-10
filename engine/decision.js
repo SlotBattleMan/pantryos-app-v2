@@ -21,6 +21,7 @@ const DecisionEngine = {
   async runMock(items, household) {
     // Try to pull real NJ prices from cache first
     let cachedPrices = {};
+    let brandMap = {}; // item name → brand from ShopRite cache
     try {
       const res = await fetch('/api/store-prices', {
         method: 'POST',
@@ -29,7 +30,12 @@ const DecisionEngine = {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.hasData) cachedPrices = data.storeBaskets;
+        if (data.hasData) {
+          cachedPrices = data.storeBaskets;
+          // Build brand map from ShopRite data (most complete)
+          const shopRiteItems = data.storeBaskets['ShopRite']?.items || [];
+          shopRiteItems.forEach(i => { if (i.brand) brandMap[i.name.toLowerCase()] = i.brand; });
+        }
       }
     } catch (e) {
       // fine — fall through to estimated prices
@@ -59,6 +65,24 @@ const DecisionEngine = {
       return parseFloat((base * mult * (item.quantity || 1)).toFixed(2));
     };
 
+    // Default brands for common items when cache has no data
+    const defaultBrands = {
+      'milk': 'Organic Valley', 'eggs': 'Eggland\'s Best', 'bread': 'Arnold',
+      'butter': 'Land O Lakes', 'olive oil': 'Colavita', 'chicken breast': 'Perdue',
+      'ground beef': 'ShopRite', 'bacon': 'Oscar Mayer', 'salmon': 'Atlantic',
+      'orange juice': 'Tropicana', 'coffee': 'Folgers', 'pasta': 'Barilla',
+      'rice': 'Uncle Ben\'s', 'cereal': 'Cheerios', 'yogurt': 'Chobani',
+      'cheese': 'Cabot', 'cheddar cheese': 'Cabot', 'mozzarella': 'Polly-O',
+      'peanut butter': 'Jif', 'jelly': 'Smucker\'s', 'sugar': 'Domino',
+      'paper towels': 'Bounty', 'toilet paper': 'Charmin', 'dish soap': 'Dawn',
+      'laundry detergent': 'Tide', 'shampoo': 'Pantene', 'toothpaste': 'Colgate',
+    };
+
+    const getBrand = (itemName) => {
+      const key = itemName.toLowerCase();
+      return brandMap[key] || defaultBrands[key] || null;
+    };
+
     // Build item lists per basket — prefer cached prices
     const buildItems = (store, mult) => items.map(item => {
       const storeData = cachedPrices[store];
@@ -66,7 +90,8 @@ const DecisionEngine = {
       const price = cachedItem
         ? parseFloat(cachedItem.price)
         : estimatePrice(item, mult);
-      return { name: item.name, price: price.toFixed(2) };
+      const brand = getBrand(item.name);
+      return { name: item.name, price: price.toFixed(2), ...(brand && { brand }) };
     });
 
     const cheapItems    = buildItems('ShopRite', 0.82);
