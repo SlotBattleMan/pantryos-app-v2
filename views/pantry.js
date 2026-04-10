@@ -278,34 +278,175 @@ Cheddar cheese"></textarea>
   async openBrandPicker(itemName, currentBrand) {
     // Curated brands per item category
     const brandOptions = {
-      'milk':            ['Organic Valley', 'Horizon Organic', 'ShopRite', 'Stop & Shop', 'Wegmans', 'Fairlife', 'Lactaid'],
-      'eggs':            ['Eggland\'s Best', 'Pete & Gerry\'s Organic', 'Vital Farms', 'ShopRite', 'Wegmans', 'Happy Egg'],
-      'bread':           ['Arnold', 'Pepperidge Farm', 'Dave\'s Killer Bread', 'Wonder', 'Nature\'s Own', 'ShopRite'],
-      'butter':          ['Land O Lakes', 'Kerrygold', 'Organic Valley', 'Wegmans', 'Challenge'],
-      'olive oil':       ['Colavita', 'California Olive Ranch', 'Kirkland', 'Bertolli', 'Pompeian'],
-      'chicken breast':  ['Perdue', 'Bell & Evans', 'ShopRite', 'Wegmans', 'Nature\'s Promise'],
-      'ground beef':     ['ShopRite', 'Wegmans', 'Laura\'s Lean', 'Nature Farm'],
-      'bacon':           ['Oscar Mayer', 'Applegate', 'Wright', 'ShopRite', 'Wegmans'],
-      'salmon':          ['Atlantic', 'Wild Planet', 'ShopRite', 'Wegmans'],
-      'orange juice':    ['Tropicana', 'Simply Orange', 'Florida\'s Natural', 'Minute Maid', 'ShopRite'],
-      'coffee':          ['Folgers', 'Dunkin\'', 'Eight O\'Clock', 'Green Mountain', 'Starbucks', 'ShopRite'],
-      'pasta':           ['Barilla', 'Ronzoni', 'De Cecco', 'Wegmans', 'ShopRite'],
-      'rice':            ['Uncle Ben\'s', 'Goya', 'Lundberg', 'ShopRite', 'Wegmans'],
-      'cereal':          ['Cheerios', 'Special K', 'Frosted Flakes', 'Honey Bunches of Oats', 'ShopRite'],
-      'yogurt':          ['Chobani', 'Fage', 'Siggi\'s', 'Stonyfield', 'ShopRite', 'Wegmans'],
-      'cheddar cheese':  ['Cabot', 'Tillamook', 'Cracker Barrel', 'ShopRite', 'Wegmans'],
-      'mozzarella':      ['Polly-O', 'BelGioioso', 'Sorrento', 'ShopRite'],
-      'peanut butter':   ['Jif', 'Skippy', 'Justin\'s', 'Teddie', 'ShopRite'],
-      'paper towels':    ['Bounty', 'Viva', 'Brawny', 'ShopRite'],
-      'toilet paper':    ['Charmin', 'Cottonelle', 'Scott', 'ShopRite'],
-      'dish soap':       ['Dawn', 'Method', 'Seventh Generation', 'ShopRite'],
-      'laundry detergent': ['Tide', 'Persil', 'Arm & Hammer', 'Gain', 'ShopRite'],
-      'shampoo':         ['Pantene', 'Dove', 'Herbal Essences', 'TRESemmé', 'Garnier'],
-      'toothpaste':      ['Colgate', 'Crest', 'Sensodyne', 'Tom\'s of Maine', 'Arm & Hammer'],
+
+  // ─── PRODUCE ──────────────────────────────────────────────────────────────
+  // Produce is largely sold unbranded by origin/farm, but bagged/packaged
+  // produce does carry branded labels. Listed brands reflect bagged/packaged
+  // options plus major grower brands found in NJ stores.
+
+  'apples': ['Honeycrisp Farms', 'Envy', 'SweeTango', 'Gala Farms', 'Cosmic Crisp', 'ShopRite', 'Wegmans'],
+  'bananas': ['Chiquita', 'Dole', 'Del Monte', 'Fyffes', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'oranges': ['Sunkist', 'Cuties', 'Halo', 'Florida\'s Natural', 'Dole', 'ShopRite', 'Wegmans'],
+  'strawberries': ['Driscoll\'s', 'California Giant', 'Wish Farms', 'SunFed Produce', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'blueberries': ['Driscoll\'s', 'Naturipe', 'Wish Farms', 'SunFed Produce', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'grapes': ['Sun World', 'Sunlight', 'Grape King', 'Calmeria', 'ShopRite', 'Wegmans', 'Dole'],
+  'avocado': ['Calavo', 'Mission Avocados', 'Del Monte', 'Hass Avocado Board', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'broccoli': ['Dole', 'Green Giant', 'Mann\'s', 'Ready Pac', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'spinach': ['Earthbound Farm', 'Dole', 'Taylor Farms', 'Olivia\'s Organics', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'lettuce': ['Dole', 'Taylor Farms', 'Fresh Express', 'Earthbound Farm', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'tomatoes': ['Sunset', 'NatureSweet', 'Backyard Farms', 'BrightFarms', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'onions': ['Gills Onions', 'ProSource', 'Bland Farms', 'Dole', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'garlic': ['Christopher Ranch', 'Spice World', 'Melissa\'s', 'Fresh Garlic Company', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'potatoes': ['Russet Farms', 'Potandon', 'Little Potato Company', 'Melissa\'s', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'carrots': ['Bolthouse Farms', 'Grimmway Farms', 'Cal-Organic', 'Dole', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'celery': ['Dole', 'Mann\'s', 'Growers Express', 'Taylor Farms', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'cucumber': ['NatureSweet', 'Sunset', 'Mucci Farms', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'bell peppers': ['Sunset', 'NatureSweet', 'Pero Family Farms', 'Village Farms', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'mushrooms': ['Giorgio', 'Monterey', 'Whitecrest', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'zucchini': ['Pero Family Farms', 'Growers Express', 'Mann\'s', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'corn': ['Dole', 'Green Giant', 'Pero Family Farms', 'Growers Express', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'sweet potatoes': ['Covington', 'Melissa\'s', 'Muranaka Farm', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'lemons': ['Sunkist', 'Melissa\'s', 'Sun Pacific', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Dole'],
+  'limes': ['Sunkist', 'Melissa\'s', 'Sun Pacific', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Dole'],
+  'peaches': ['Wawona', 'Titan Farms', 'Dole', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'pineapple': ['Dole', 'Del Monte', 'Chiquita', 'Melissa\'s', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'watermelon': ['Dulcinea', 'Dole', 'Del Monte', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'kale': ['Earthbound Farm', 'Dole', 'Taylor Farms', 'Olivia\'s Organics', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'arugula': ['Earthbound Farm', 'Taylor Farms', 'Olivia\'s Organics', 'Little Leaf Farms', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'romaine lettuce': ['Dole', 'Fresh Express', 'Taylor Farms', 'Earthbound Farm', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'asparagus': ['Gourmet Trading', 'Pero Family Farms', 'Del Monte', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'brussels sprouts': ['Mann\'s', 'Earthbound Farm', 'Growers Express', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'cauliflower': ['Mann\'s', 'Growers Express', 'Earthbound Farm', 'Dole', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'green beans': ['Growers Express', 'Pero Family Farms', 'Del Monte', 'Dole', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'jalapeños': ['Melissa\'s', 'Pero Family Farms', 'NatureSweet', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+
+  // ─── DAIRY ────────────────────────────────────────────────────────────────
+
+  'whole milk': ['Organic Valley', 'Horizon Organic', 'Fairlife', 'Lactaid', 'Tuscan', 'ShopRite', 'Wegmans'],
+  '2% milk': ['Organic Valley', 'Horizon Organic', 'Fairlife', 'Lactaid', 'Tuscan', 'ShopRite', 'Wegmans'],
+  'eggs': ['Eggland\'s Best', 'Vital Farms', 'Pete and Gerry\'s', 'Happy Egg', 'Land O Lakes', 'ShopRite', 'Wegmans'],
+  'butter': ['Land O Lakes', 'Kerrygold', 'Challenge', 'Organic Valley', 'Tillamook', 'ShopRite', 'Wegmans'],
+  'cheddar cheese': ['Cabot', 'Tillamook', 'Cracker Barrel', 'Sargento', 'Kraft', 'ShopRite', 'Wegmans'],
+  'mozzarella': ['Polly-O', 'BelGioioso', 'Sargento', 'Galbani', 'Kraft', 'ShopRite', 'Wegmans'],
+  'parmesan': ['BelGioioso', 'Kraft', 'Sargento', 'Cello', 'Galbani', 'ShopRite', 'Wegmans'],
+  'cream cheese': ['Philadelphia', 'Breakstone\'s', 'Organic Valley', 'Cabot', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'sour cream': ['Daisy', 'Breakstone\'s', 'Organic Valley', 'Hood', 'Cabot', 'ShopRite', 'Wegmans'],
+  'yogurt': ['Chobani', 'Fage', 'Siggi\'s', 'Stonyfield', 'Dannon', 'ShopRite', 'Wegmans'],
+  'cottage cheese': ['Breakstone\'s', 'Daisy', 'Good Culture', 'Hood', 'Organic Valley', 'ShopRite', 'Wegmans'],
+  'heavy cream': ['Hood', 'Organic Valley', 'Horizon Organic', 'Land O Lakes', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'half and half': ['Hood', 'Land O Lakes', 'Organic Valley', 'Horizon Organic', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'whipped cream': ['Reddi Whip', 'Cool Whip', 'Lucerne', 'Organic Valley', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'American cheese': ['Kraft', 'Land O Lakes', 'Boar\'s Head', 'Sargento', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'swiss cheese': ['Boar\'s Head', 'Sargento', 'Finlandia', 'Land O Lakes', 'Cabot', 'ShopRite', 'Wegmans'],
+  'provolone': ['Boar\'s Head', 'Sargento', 'Galbani', 'Auricchio', 'BelGioioso', 'ShopRite', 'Wegmans'],
+  'brie': ['President', 'Alouette', 'Ile de France', 'Fromager d\'Affinois', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'gouda': ['Boar\'s Head', 'Sargento', 'Bel Brands', 'Beemster', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'string cheese': ['Sargento', 'Polly-O', 'Frigo', 'Kraft', 'Organic Valley', 'ShopRite', 'Wegmans'],
+
+  // ─── MEAT ─────────────────────────────────────────────────────────────────
+
+  'chicken breast': ['Perdue', 'Tyson', 'Pilgrim\'s', 'Bell & Evans', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'ground beef': ['Laura\'s Lean', '80/20 Fresh', 'Certified Angus Beef', 'Pat LaFrieda', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'bacon': ['Oscar Mayer', 'Applegate', 'Niman Ranch', 'Hatfield', 'Boar\'s Head', 'ShopRite', 'Wegmans'],
+  'salmon': ['Atlantic Sapphire', 'SeaBear', 'Ocean Beauty', 'Verlasso', 'ShopRite', 'Wegmans', 'Acme'],
+  'shrimp': ['Chicken of the Sea', 'SeaPak', 'Gulf Shrimp Co.', 'Aqua Star', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'steak': ['Certified Angus Beef', 'Pat LaFrieda', 'USDA Choice', 'Laura\'s Lean', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'pork chops': ['Hatfield', 'Smithfield', 'Niman Ranch', 'Duroc', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'turkey': ['Butterball', 'Shady Brook Farms', 'Jennie-O', 'Plainville Farms', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'ground turkey': ['Butterball', 'Shady Brook Farms', 'Jennie-O', 'Plainville Farms', 'Nature\'s Promise', 'ShopRite', 'Wegmans'],
+  'hot dogs': ['Nathan\'s Famous', 'Sabrett', 'Boar\'s Head', 'Hebrew National', 'Oscar Mayer', 'ShopRite', 'Wegmans'],
+  'sausage': ['Hatfield', 'Johnsonville', 'Aidells', 'Boar\'s Head', 'Premio', 'ShopRite', 'Wegmans'],
+  'lamb': ['American Lamb Board', 'Certified American', 'Shepherd\'s Lamb', 'Niman Ranch', 'ShopRite', 'Wegmans', 'Acme'],
+  'tilapia': ['Regal Springs', 'Aqua Star', 'Captain\'s Choice', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'tuna steak': ['Ahi Tuna Co.', 'SeaBear', 'Ocean Beauty', 'Gorton\'s', 'ShopRite', 'Wegmans', 'Acme'],
+  'cod': ['Gorton\'s', 'High Liner', 'SeaBear', 'Captain\'s Choice', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+
+  // ─── PANTRY ───────────────────────────────────────────────────────────────
+
+  'pasta': ['Barilla', 'De Cecco', 'Ronzoni', 'Banza', 'Garofalo', 'ShopRite', 'Wegmans'],
+  'rice': ['Mahatma', 'Uncle Ben\'s (Ben\'s Original)', 'Lundberg', 'Goya', 'Carolina', 'ShopRite', 'Wegmans'],
+  'bread': ['Arnold', 'Pepperidge Farm', 'Martin\'s', 'Dave\'s Killer Bread', 'Nature\'s Own', 'ShopRite', 'Wegmans'],
+  'olive oil': ['Colavita', 'California Olive Ranch', 'Filippo Berio', 'Kirkland Signature', 'Pompeian', 'ShopRite', 'Wegmans'],
+  'vegetable oil': ['Crisco', 'Wesson', 'Mazola', 'Spectrum', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'flour': ['Gold Medal', 'King Arthur', 'Pillsbury', 'Bob\'s Red Mill', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'sugar': ['Domino', 'C&H', 'Imperial', 'Bob\'s Red Mill', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'salt': ['Morton', 'Diamond Crystal', 'Himalayan Pink', 'Maldon', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'black pepper': ['McCormick', 'Spice Islands', 'Badia', 'Simply Organic', 'Tone\'s', 'ShopRite', 'Wegmans'],
+  'chicken broth': ['Swanson', 'Pacific Foods', 'Kitchen Basics', 'College Inn', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'canned tomatoes': ['Hunt\'s', 'Muir Glen', 'San Marzano (Cento)', 'Tuttorosso', 'Pomi', 'ShopRite', 'Wegmans'],
+  'tomato sauce': ['Rao\'s', 'Prego', 'Classico', 'Muir Glen', 'Victoria', 'ShopRite', 'Wegmans'],
+  'peanut butter': ['Jif', 'Skippy', 'Justin\'s', 'Teddie', 'Smucker\'s Natural', 'ShopRite', 'Wegmans'],
+  'jelly': ['Smucker\'s', 'Welch\'s', 'Bonne Maman', 'Polaner', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'honey': ['Nature Nate\'s', 'Sue Bee', 'Local Hive', 'Wholesome', 'Mike\'s Hot Honey', 'ShopRite', 'Wegmans'],
+  'maple syrup': ['Coombs Family Farms', 'Maple Grove Farms', 'Butternut Mountain Farm', 'Anderson\'s', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'oatmeal': ['Quaker', 'Bob\'s Red Mill', 'Nature\'s Path', 'McCann\'s', 'Kodiak Cakes', 'ShopRite', 'Wegmans'],
+  'cereal': ['Kellogg\'s', 'General Mills', 'Post', 'Nature\'s Path', 'Cascadian Farm', 'ShopRite', 'Wegmans'],
+  'granola': ['Kind', 'Purely Elizabeth', 'Bear Naked', 'Nature Valley', 'Granola Guru', 'ShopRite', 'Wegmans'],
+  'coffee': ['Folgers', 'Maxwell House', 'Dunkin\'', 'Starbucks', 'Eight O\'Clock', 'ShopRite', 'Wegmans'],
+  'tea': ['Lipton', 'Bigelow', 'Celestial Seasonings', 'Tetley', 'Twinings', 'ShopRite', 'Wegmans'],
+  'sparkling water': ['LaCroix', 'Polar', 'Perrier', 'San Pellegrino', 'Bubly', 'ShopRite', 'Wegmans'],
+  'soda': ['Coca-Cola', 'Pepsi', 'Dr Pepper', 'Sprite', 'Canada Dry', 'ShopRite', 'Wegmans'],
+  'orange juice': ['Tropicana', 'Simply Orange', 'Minute Maid', 'Florida\'s Natural', 'Natalie\'s', 'ShopRite', 'Wegmans'],
+  'apple juice': ['Mott\'s', 'Martinelli\'s', 'Tropicana', 'Minute Maid', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+
+  // ─── SNACKS ───────────────────────────────────────────────────────────────
+
+  'potato chips': ['Utz', 'Wise', 'Lay\'s', 'Ruffles', 'Cape Cod', 'Kettle Brand', 'ShopRite'],
+  'tortilla chips': ['Tostitos', 'Mission', 'On The Border', 'Late July', 'Garden of Eatin\'', 'ShopRite', 'Wegmans'],
+  'crackers': ['Ritz', 'Triscuit', 'Wheat Thins', 'Pepperidge Farm', 'Late July', 'ShopRite', 'Wegmans'],
+  'cookies': ['Pepperidge Farm', 'Oreo', 'Chips Ahoy', 'Tate\'s Bake Shop', 'Nabisco', 'ShopRite', 'Wegmans'],
+  'granola bars': ['Kind', 'Clif Bar', 'Nature Valley', 'RXBAR', 'Larabar', 'ShopRite', 'Wegmans'],
+  'popcorn': ['Orville Redenbacher', 'Act II', 'SkinnyPop', 'Boom Chicka Pop', 'Smartfood', 'ShopRite', 'Wegmans'],
+  'pretzels': ['Utz', 'Snyder\'s of Hanover', 'Rold Gold', 'Quinn', 'Martin\'s', 'ShopRite', 'Wegmans'],
+  'nuts': ['Planters', 'Blue Diamond', 'Fisher', 'Wonderful Pistachios', 'Emerald', 'ShopRite', 'Wegmans'],
+  'trail mix': ['Planters', 'Emerald', 'Good Sense', 'Nature\'s Garden', 'KIND', 'ShopRite', 'Wegmans'],
+  'salsa': ['Pace', 'Tostitos', 'Newman\'s Own', 'Green Mountain Gringo', 'Frontera', 'ShopRite', 'Wegmans'],
+  'hummus': ['Sabra', 'Cedar\'s', 'Boar\'s Head', 'Hope Foods', 'Ithaca', 'ShopRite', 'Wegmans'],
+  'guacamole': ['Sabra', 'Wholly Guacamole', 'Hope Foods', 'Good Foods', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'cheese dip': ['Tostitos', 'Fritos', 'Velveeta', 'Heluva Good', 'Utz', 'ShopRite', 'Wegmans'],
+  'pita chips': ['Stacy\'s', 'Athenos', 'Sabra', 'Cava', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+
+  // ─── FROZEN ───────────────────────────────────────────────────────────────
+
+  'frozen pizza': ['DiGiorno', 'Amy\'s', 'Newman\'s Own', 'Screamin\' Sicilian', 'Freschetta', 'ShopRite', 'Wegmans'],
+  'frozen vegetables': ['Birds Eye', 'Green Giant', 'Cascadian Farm', 'Alexia', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'ice cream': ['Häagen-Dazs', 'Breyers', 'Turkey Hill', 'Edy\'s (Dreyer\'s)', 'Ben & Jerry\'s', 'ShopRite', 'Wegmans'],
+  'frozen burritos': ['Amy\'s', 'El Monterey', 'Trader Joe\'s', 'Don Miguel', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'frozen waffles': ['Eggo', 'Birch Benders', 'Van\'s', 'Nature\'s Path', 'Kodiak Cakes', 'ShopRite', 'Wegmans'],
+  'chicken nuggets': ['Tyson', 'Perdue', 'Bell & Evans', 'Just Bare', 'Applegate', 'ShopRite', 'Wegmans'],
+  'fish sticks': ['Gorton\'s', 'Van de Kamp\'s', 'Trident', 'High Liner', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'frozen fruit': ['Dole', 'Wyman\'s', 'Cascadian Farm', 'Earthbound Farm', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+
+  // ─── HOUSEHOLD ────────────────────────────────────────────────────────────
+
+  'paper towels': ['Bounty', 'Viva', 'Brawny', 'Scott', 'Marcal', 'ShopRite', 'Wegmans'],
+  'toilet paper': ['Charmin', 'Cottonelle', 'Scott', 'Angel Soft', 'Seventh Generation', 'ShopRite', 'Wegmans'],
+  'dish soap': ['Dawn', 'Palmolive', 'Method', 'Seventh Generation', 'Mrs. Meyer\'s', 'ShopRite', 'Wegmans'],
+  'laundry detergent': ['Tide', 'Gain', 'Arm & Hammer', 'Persil', 'All', 'ShopRite', 'Wegmans'],
+  'trash bags': ['Hefty', 'Glad', 'Husky', 'Great Value', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'aluminum foil': ['Reynolds Wrap', 'Kirkland Signature', 'Solux', 'ShopRite', 'Wegmans', 'Stop & Shop', 'Acme'],
+  'plastic wrap': ['Glad ClingWrap', 'Reynolds', 'Stretch-Tite', 'Saran', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'zip lock bags': ['Ziploc', 'Glad', 'Hefty', 'Solux', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'sponges': ['Scotch-Brite', 'O-Cedar', 'Spontex', 'Dawn', 'ShopRite', 'Wegmans', 'Stop & Shop'],
+  'cleaning spray': ['Lysol', 'Method', 'Mrs. Meyer\'s', 'Clorox', 'Seventh Generation', 'ShopRite', 'Wegmans'],
+
+  // ─── PERSONAL CARE ────────────────────────────────────────────────────────
+
+  'shampoo': ['Pantene', 'Dove', 'TRESemmé', 'OGX', 'Head & Shoulders', 'Suave', 'Herbal Essences'],
+  'conditioner': ['Pantene', 'Dove', 'TRESemmé', 'OGX', 'Herbal Essences', 'Suave', 'Garnier Fructis'],
+  'body wash': ['Dove', 'Olay', 'Irish Spring', 'Old Spice', 'Aveeno', 'Nivea', 'Method'],
+  'toothpaste': ['Colgate', 'Crest', 'Sensodyne', 'Arm & Hammer', 'Tom\'s of Maine', 'Aquafresh', 'Hello'],
+  'deodorant': ['Degree', 'Secret', 'Dove', 'Old Spice', 'Arm & Hammer', 'Native', 'Speed Stick'],
+  'razors': ['Gillette', 'Schick', 'BIC', 'Billie', 'Dorco', 'Harry\'s', 'Eos'],
+  'hand soap': ['Softsoap', 'Method', 'Mrs. Meyer\'s', 'Dial', 'Seventh Generation', 'Dove', 'GOJO'],
+  'face wash': ['Cetaphil', 'CeraVe', 'Neutrogena', 'Olay', 'Aveeno', 'Dove', 'Simple'],
+  'lotion': ['Aveeno', 'CeraVe', 'Lubriderm', 'Eucerin', 'Vaseline', 'Jergens', 'Cetaphil'],
+  'dental floss': ['Oral-B', 'Colgate', 'Listerine', 'GUM', 'Plackers', 'Tom\'s of Maine', 'Cocofloss'],
+
     };
 
     const key = itemName.toLowerCase();
-    const brands = brandOptions[key] || ['Store brand', 'National brand', 'Organic option'];
+    const brands = brandOptions[key] || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley', 'Private Selection'];
 
     const modal = document.createElement('div');
     modal.className = 'store-modal-overlay brand-picker-overlay';
