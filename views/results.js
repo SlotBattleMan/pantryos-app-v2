@@ -89,6 +89,16 @@ const ResultsView = {
 
     // Accept button → open store search
     document.getElementById('accept-btn').addEventListener('click', () => {
+      // Checkout buttons on each card
+      document.querySelectorAll('.checkout-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mode = btn.dataset.mode;
+          const basketData = result[mode];
+          this.openCheckout(mode, basketData, result, items, household);
+        });
+      });
+
       const selectedCard = document.querySelector('.basket-card.basket-selected');
       const selectedMode = selectedCard?.dataset.mode || mode;
       const store = result?.[selectedMode]?.store || this.mockStore(selectedMode);
@@ -156,6 +166,199 @@ const ResultsView = {
     return this.AISLE_ORDER
       .filter(row => sectionMap[row.section]?.length > 0)
       .map(row => ({ ...row, items: sectionMap[row.section] }));
+  },
+
+
+  openCheckout(mode, basketData, result, items, household) {
+    const store = basketData?.store || this.mockStore(mode);
+    const total = basketData?.total || this.mockTotal(mode);
+    const allItems = items || [];
+
+    // Store comparison
+    const stores = [
+      { label: 'ShopRite',  total: result?.cheapest?.total, mode: 'cheapest', emoji: '💰' },
+      { label: 'Wegmans',   total: result?.balanced?.total, mode: 'balanced', emoji: '⚖️' },
+      { label: 'Instacart', total: result?.easiest?.total,  mode: 'easiest',  emoji: '⚡' },
+    ];
+    const storeCompareHTML = stores.map(s => `
+      <div class="checkout-store-row ${s.mode === mode ? 'checkout-store-selected' : ''}">
+        <span class="checkout-store-emoji">${s.emoji}</span>
+        <span class="checkout-store-name">${s.label}</span>
+        <span class="checkout-store-total">${s.total ? '$' + s.total : '—'}</span>
+        ${s.mode === mode ? '<span class="checkout-store-tag">Selected</span>' : ''}
+      </div>
+    `).join('');
+
+    // Aisle list for this basket
+    const enrichedItems = allItems.map(i => ({
+      ...i,
+      brand: basketData?.items?.find(b => b.name === i.name)?.brand || null,
+    }));
+    const aisles = this.buildAisleList(enrichedItems);
+
+    const aislePreviewHTML = aisles.slice(0, 3).map(a =>
+      `<span class="checkout-section-chip">${a.emoji} ${a.section} (${a.items.length})</span>`
+    ).join('') + (aisles.length > 3 ? `<span class="checkout-section-chip">+${aisles.length - 3} more</span>` : '');
+
+    // Plain text for clipboard / SMS
+    const plainText = [
+      'PantryOS Shopping List — ' + store,
+      'Est. Total: $' + total,
+      '',
+      ...aisles.map(a =>
+        a.section.toUpperCase() + ' (' + a.aisle + ')\n' +
+        a.items.map(i => {
+          const b = i.brand ? ' [' + i.brand + ']' : '';
+          const q = (i.quantity || 1) > 1 ? ' x' + i.quantity : '';
+          return '  □ ' + i.name + q + b;
+        }).join('\n')
+      ),
+    ].join('\n');
+
+    const storeUrl = this.getStoreItemUrl(store, allItems[0]?.name || 'groceries');
+
+    const modal = document.createElement('div');
+    modal.className = 'store-modal-overlay checkout-overlay';
+    modal.innerHTML = `
+      <div class="store-modal checkout-modal">
+        <div class="store-modal-header">
+          <div>
+            <h3>Checkout at ${store}</h3>
+            <p class="store-modal-sub">${allItems.length} items · Est. <strong>$${total}</strong></p>
+          </div>
+          <button class="modal-close-btn" id="checkout-close">✕</button>
+        </div>
+
+        <div class="checkout-section">
+          <p class="checkout-section-label">Price comparison</p>
+          <div class="checkout-store-list">${storeCompareHTML}</div>
+        </div>
+
+        <div class="checkout-section">
+          <p class="checkout-section-label">Your optimized list · ${aisles.length} sections</p>
+          <div class="checkout-section-chips">${aislePreviewHTML}</div>
+        </div>
+
+        <div class="checkout-actions">
+          <button class="checkout-action-btn" id="co-list-btn">
+            <span class="checkout-action-icon">🛒</span>
+            <span class="checkout-action-text">
+              <span class="checkout-action-label">View shopping list</span>
+              <span class="checkout-action-sub">Aisle-by-aisle walk order</span>
+            </span>
+          </button>
+          <button class="checkout-action-btn" id="co-copy-btn">
+            <span class="checkout-action-icon">📱</span>
+            <span class="checkout-action-text">
+              <span class="checkout-action-label">Send to phone</span>
+              <span class="checkout-action-sub">Copy list to clipboard</span>
+            </span>
+          </button>
+          <button class="checkout-action-btn" id="co-print-btn">
+            <span class="checkout-action-icon">🖨️</span>
+            <span class="checkout-action-text">
+              <span class="checkout-action-label">Print list</span>
+              <span class="checkout-action-sub">Clean printable format</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="checkout-instacart">
+          <div class="checkout-instacart-inner">
+            <span class="checkout-instacart-badge">Coming soon</span>
+            <p class="checkout-instacart-text">One-tap Instacart delivery — your full basket sent directly to the app</p>
+            <button class="checkout-instacart-notify" id="co-notify-btn">Notify me when it's live →</button>
+          </div>
+        </div>
+
+        <div class="store-modal-footer">
+          <button class="btn-ghost" id="checkout-cancel">Close</button>
+          <a href="${storeUrl}" target="_blank" rel="noopener" class="btn-primary">Open ${store} →</a>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    document.getElementById('checkout-close').addEventListener('click', close);
+    document.getElementById('checkout-cancel').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+    // View shopping list
+    document.getElementById('co-list-btn').addEventListener('click', () => {
+      close();
+      this.openStoreSearch(store, null, enrichedItems);
+    });
+
+    // Copy / send to phone
+    document.getElementById('co-copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText(plainText).then(() => {
+        const btn = document.getElementById('co-copy-btn');
+        if (!btn) return;
+        btn.querySelector('.checkout-action-label').textContent = '✓ Copied!';
+        btn.querySelector('.checkout-action-sub').textContent = 'Paste into Messages or Notes';
+        setTimeout(() => {
+          btn.querySelector('.checkout-action-label').textContent = 'Send to phone';
+          btn.querySelector('.checkout-action-sub').textContent = 'Copy list to clipboard';
+        }, 2500);
+      });
+    });
+
+    // Print
+    document.getElementById('co-print-btn').addEventListener('click', () => {
+      const printWin = window.open('', '_blank');
+      const rows = aisles.map(a => `
+        <div class="section">
+          <div class="section-title">${a.emoji} ${a.section} — ${a.aisle}</div>
+          ${a.items.map(i => {
+            const b = i.brand ? `<span class="brand">${i.brand}</span>` : '';
+            const q = (i.quantity || 1) > 1 ? ` ×${i.quantity}` : '';
+            return `<div class="item"><span class="check"></span> ${i.name}${q} ${b}</div>`;
+          }).join('')}
+        </div>`).join('');
+      printWin.document.write(`<!DOCTYPE html><html><head><title>PantryOS — ${store}</title>
+        <style>
+          body{font-family:system-ui,sans-serif;max-width:600px;margin:40px auto;color:#111;font-size:15px}
+          h1{font-size:22px;margin-bottom:4px}
+          .meta{color:#666;font-size:13px;margin-bottom:28px}
+          .section{margin-bottom:20px}
+          .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:8px}
+          .item{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid #f0f0f0}
+          .check{width:13px;height:13px;border:1.5px solid #bbb;border-radius:2px;flex-shrink:0;display:inline-block;margin-top:2px}
+          .brand{font-size:12px;color:#999;margin-left:4px}
+          .total{font-size:16px;font-weight:700;margin-top:24px;padding-top:12px;border-top:2px solid #ddd}
+          @media print{body{margin:20px}}
+        </style></head><body>
+        <h1>PantryOS Shopping List</h1>
+        <p class="meta">${store} · Est. $${total} · ${allItems.length} items · ${new Date().toLocaleDateString()}</p>
+        ${rows}
+        <div class="total">Estimated total: $${total}</div>
+        </body></html>`);
+      printWin.document.close();
+      setTimeout(() => { printWin.focus(); printWin.print(); }, 400);
+    });
+
+    // Instacart waitlist notify
+    document.getElementById('co-notify-btn').addEventListener('click', async () => {
+      const entered = prompt('Enter your email to be notified when Instacart integration launches:');
+      if (entered?.includes('@')) {
+        try {
+          await fetch('https://cwqzcfrgbvxerhgwsnhx.supabase.co/rest/v1/instacart_waitlist', {
+            method: 'POST',
+            headers: {
+              'apikey': 'sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD',
+              'Authorization': 'Bearer sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD',
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=ignore-duplicates',
+            },
+            body: JSON.stringify({ email: entered, created_at: new Date().toISOString() }),
+          });
+        } catch(e) {}
+        const btn = document.getElementById('co-notify-btn');
+        if (btn) btn.textContent = "✓ You're on the list!";
+      }
+    });
   },
 
   openStoreSearch(store, itemNames, items) {
@@ -281,6 +484,7 @@ const ResultsView = {
           <span class="store-label">Primary store</span>
           <span class="store-name">${data?.store || this.mockStore(mode)}</span>
         </div>
+        <button class="checkout-btn" data-mode="${mode}">Checkout →</button>
       </div>
     `;
   },

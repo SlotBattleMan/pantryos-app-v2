@@ -1065,6 +1065,184 @@ body {
 }
 .breakdown-item-name { font-weight: 500; }
 
+/* Checkout flow */
+.checkout-modal {
+  max-width: 540px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.checkout-section {
+  margin-bottom: 16px;
+}
+
+.checkout-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.checkout-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkout-store-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+}
+
+.checkout-store-selected {
+  border-color: var(--teal);
+  background: var(--teal-light);
+}
+
+.checkout-store-emoji { font-size: 16px; }
+.checkout-store-name { flex: 1; font-size: 14px; font-weight: 600; }
+.checkout-store-total { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.checkout-store-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal-dark);
+  background: rgba(13,155,110,0.15);
+  border-radius: 8px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.checkout-section-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.checkout-section-chip {
+  font-size: 12px;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 4px 10px;
+  color: var(--text-muted);
+}
+
+.checkout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.checkout-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.12s;
+}
+.checkout-action-btn:hover {
+  border-color: var(--teal);
+  background: var(--teal-light);
+}
+
+.checkout-action-icon { font-size: 22px; flex-shrink: 0; }
+
+.checkout-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.checkout-action-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.checkout-action-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.checkout-instacart {
+  margin-bottom: 16px;
+}
+
+.checkout-instacart-inner {
+  background: linear-gradient(135deg, #f0faf5 0%, #e8f5f0 100%);
+  border: 1.5px dashed var(--teal);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkout-instacart-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal-dark);
+  background: rgba(13,155,110,0.15);
+  border-radius: 8px;
+  padding: 2px 8px;
+  width: fit-content;
+}
+
+.checkout-instacart-text {
+  font-size: 13px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.checkout-instacart-notify {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+.checkout-instacart-notify:hover { text-decoration: underline; }
+
+/* Checkout button on basket card */
+.checkout-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.01em;
+}
+.checkout-btn:hover { background: var(--teal-dark); }
+
 /* Shopping list modal */
 .shopping-list-modal {
   max-height: 90vh;
