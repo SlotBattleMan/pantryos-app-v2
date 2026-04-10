@@ -445,8 +445,18 @@ Cheddar cheese"></textarea>
 
     };
 
-    const key = itemName.toLowerCase();
-    const brands = brandOptions[key] || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley', 'Private Selection'];
+    const key = itemName.toLowerCase().trim();
+
+    // Fuzzy match — try exact first, then partial key match
+    let brands = brandOptions[key];
+    if (!brands) {
+      const matchedKey = Object.keys(brandOptions).find(k =>
+        k.includes(key) || key.includes(k) ||
+        key.split(' ').some(word => word.length > 3 && k.includes(word))
+      );
+      if (matchedKey) brands = brandOptions[matchedKey];
+    }
+    brands = brands || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley'];
 
     const modal = document.createElement('div');
     modal.className = 'store-modal-overlay brand-picker-overlay';
