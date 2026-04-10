@@ -4,6 +4,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cwqzcfrgbvxerhgwsnhx.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_ud37Fjjl3BfBEMpH8rTZdA_k9BTYhDD';
 const NJ_STORES = ['ShopRite', 'Stop & Shop', 'Wegmans', 'Acme Markets'];
+const NJ_STORES_FILTER = NJ_STORES.map(s => encodeURIComponent(s)).join(',');
 
 async function getNJPrices(items) {
   try {
@@ -11,8 +12,7 @@ async function getNJPrices(items) {
 
     for (const item of items) {
       const keyword = item.name.toLowerCase().trim().split(' ')[0];
-      const storeFilter = NJ_STORES.map(s => `store.eq.${encodeURIComponent(s)}`).join(',');
-      const url = `${SUPABASE_URL}/rest/v1/price_cache?item_name=ilike.*${encodeURIComponent(keyword)}*&store=in.(${NJ_STORES.map(s => `"${s}"`).join(',')})&select=store,item_name,price,unit,brand,updated_at&order=updated_at.desc`;
+      const url = `${SUPABASE_URL}/rest/v1/price_cache?item_name=ilike.*${encodeURIComponent(keyword)}*&store=in.(${NJ_STORES_FILTER})&select=store,item_name,price,unit,brand,updated_at&order=updated_at.desc`;
 
       const res = await fetch(url, {
         headers: {
@@ -40,7 +40,7 @@ async function getNJPrices(items) {
     }
 
     // Get cache age from most recent entry
-    const ageUrl = `${SUPABASE_URL}/rest/v1/price_cache?store=in.(${NJ_STORES.map(s => `"${s}"`).join(',')})&select=updated_at&order=updated_at.desc&limit=1`;
+    const ageUrl = `${SUPABASE_URL}/rest/v1/price_cache?store=in.(${NJ_STORES_FILTER})&select=updated_at&order=updated_at.desc&limit=1`;
     const ageRes = await fetch(ageUrl, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
     });
