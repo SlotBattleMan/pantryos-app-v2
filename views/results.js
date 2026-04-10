@@ -121,47 +121,119 @@ const ResultsView = {
     return map[store] || `https://www.google.com/search?q=${encodeURIComponent(store + ' ' + itemName)}`;
   },
 
+  // ── Aisle Routing Engine ───────────────────────────────────────────────
+  AISLE_ORDER: [
+    { section: 'Produce',               aisle: 'Aisle 1',  emoji: '\u{1F966}', keywords: ['apple','banana','orange','strawberr','blueberr','grape','avocado','broccoli','spinach','lettuce','tomato','onion','garlic','potato','carrot','celery','cucumber','pepper','mushroom','zucchini','corn','lemon','lime','peach','pineapple','watermelon','kale','arugula','asparagus','brussels','cauliflower','bean','jalapen','fruit','vegetable','veggie','produce'] },
+    { section: 'Bakery & Bread',        aisle: 'Aisle 2',  emoji: '\u{1F35E}', keywords: ['bread','bagel','roll','muffin','croissant','baguette','sourdough','pita','tortilla','wrap','bun'] },
+    { section: 'Deli & Cheese',         aisle: 'Aisle 3',  emoji: '\u{1F9C0}', keywords: ['deli','salami','prosciutto','brie','gouda','cheddar','mozzarella','parmesan','provolone','swiss','string cheese','boar'] },
+    { section: 'Meat & Seafood',        aisle: 'Aisle 4',  emoji: '\u{1F969}', keywords: ['chicken','beef','steak','pork','lamb','turkey','bacon','sausage','hot dog','salmon','shrimp','fish','tilapia','cod','tuna','seafood','meat','ground'] },
+    { section: 'Dairy & Eggs',          aisle: 'Aisle 5',  emoji: '\u{1F95B}', keywords: ['milk','egg','butter','yogurt','cream','sour cream','cottage','half and half','whipped'] },
+    { section: 'Frozen',                aisle: 'Aisle 6',  emoji: '\u{1F9CA}', keywords: ['frozen','ice cream','nugget','waffle','pancake','burrito','fries','fish stick'] },
+    { section: 'Beverages',             aisle: 'Aisle 7',  emoji: '\u{1F9C3}', keywords: ['juice','soda','water','sparkling','coffee','tea','beer','wine','drink','beverage','kombucha','gatorade','lemonade'] },
+    { section: 'Snacks',                aisle: 'Aisle 8',  emoji: '\u{1F37F}', keywords: ['chip','cracker','cookie','pretzel','popcorn','nut','trail mix','snack','granola bar','candy','chocolate','gummy','popcorn','pita chip'] },
+    { section: 'Breakfast & Cereal',    aisle: 'Aisle 9',  emoji: '\u{1F963}', keywords: ['cereal','oatmeal','granola','pancake mix','waffle mix','syrup','breakfast'] },
+    { section: 'Pantry & Canned Goods', aisle: 'Aisle 10', emoji: '\u{1F96B}', keywords: ['pasta','rice','flour','sugar','salt','pepper','oil','vinegar','sauce','broth','soup','can','lentil','peanut butter','jelly','honey','spice','mayo','ketchup','mustard','dressing'] },
+    { section: 'Baby & Kids',           aisle: 'Aisle 11', emoji: '\u{1F476}', keywords: ['diaper','formula','baby','wipe','pacifier'] },
+    { section: 'Household & Cleaning',  aisle: 'Aisle 12', emoji: '\u{1F9F9}', keywords: ['paper towel','toilet paper','trash','foil','plastic wrap','zip','sponge','cleaning','detergent','dish soap','laundry','bleach','fabric','dryer','dishwasher'] },
+    { section: 'Personal Care',         aisle: 'Aisle 13', emoji: '\u{1FA71}', keywords: ['shampoo','conditioner','body wash','soap','toothpaste','toothbrush','deodorant','razor','shaving','lotion','sunscreen','face wash','floss','mouthwash','vitamin','medicine','advil','tylenol','dry shampoo'] },
+  ],
+
+  guessSection(itemName, category) {
+    const text = (itemName + ' ' + (category || '')).toLowerCase();
+    for (const row of this.AISLE_ORDER) {
+      if (row.keywords.some(k => text.includes(k))) return row.section;
+    }
+    return 'Pantry & Canned Goods';
+  },
+
+  buildAisleList(items) {
+    const sectionMap = {};
+    items.forEach(item => {
+      const section = this.guessSection(item.name, item.category);
+      if (!sectionMap[section]) sectionMap[section] = [];
+      sectionMap[section].push(item);
+    });
+    return this.AISLE_ORDER
+      .filter(row => sectionMap[row.section]?.length > 0)
+      .map(row => ({ ...row, items: sectionMap[row.section] }));
+  },
+
   openStoreSearch(store, itemNames, items) {
     const allItems = items || [];
+    const aisles = this.buildAisleList(allItems);
+    const storeUrl = this.getStoreItemUrl(store, allItems[0]?.name || 'groceries');
+    const isDelivery = store === 'Instacart';
 
-    // Build per-item search links for this store
-    const itemLinks = allItems.map(i => {
-      const url = this.getStoreItemUrl(store, i.name);
-      const qty = i.quantity > 1 ? ` <span class="item-qty">×${i.quantity}</span>` : '';
-      return `
-        <a href="${url}" target="_blank" rel="noopener" class="store-item-link">
-          <span class="store-item-name">${i.name}${qty}</span>
-          <span class="store-item-search">Search →</span>
-        </a>`;
-    }).join('');
+    // Build aisle-grouped list HTML
+    const aisleHTML = aisles.map(aisle => `
+      <div class="aisle-section">
+        <div class="aisle-header">
+          <span class="aisle-emoji">${aisle.emoji}</span>
+          <span class="aisle-name">${aisle.section}</span>
+          <span class="aisle-number">${aisle.aisle}</span>
+        </div>
+        <div class="aisle-items">
+          ${aisle.items.map(item => {
+            const brand = item.brand ? `<span class="aisle-item-brand">${item.brand}</span>` : '';
+            const qty = (item.quantity || 1) > 1 ? `<span class="aisle-item-qty">x${item.quantity}</span>` : '';
+            const searchUrl = this.getStoreItemUrl(store, item.name);
+            return `
+              <div class="aisle-item-row">
+                <span class="aisle-check" onclick="this.classList.toggle('checked')">&#9633;</span>
+                <span class="aisle-item-info">
+                  <span class="aisle-item-name">${item.name}${qty}</span>
+                  ${brand}
+                </span>
+                <a href="${searchUrl}" target="_blank" rel="noopener" class="aisle-item-search">Find \u2192</a>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
 
-    // Also build a single "search all" URL using the first item as entry point
-    const firstUrl = this.getStoreItemUrl(store, allItems[0]?.name || 'groceries');
+    // Plain text version for copy/share
+    const plainText = aisles.map(aisle =>
+      aisle.section.toUpperCase() + ' (' + aisle.aisle + ')\n' +
+      aisle.items.map(i => {
+        const b = i.brand ? ' [' + i.brand + ']' : '';
+        const q = (i.quantity || 1) > 1 ? ' x' + i.quantity : '';
+        return '  \u25a1 ' + i.name + q + b;
+      }).join('\n')
+    ).join('\n\n');
 
     const modal = document.createElement('div');
     modal.className = 'store-modal-overlay';
     modal.innerHTML = `
-      <div class="store-modal store-modal-wide">
+      <div class="store-modal store-modal-wide shopping-list-modal">
         <div class="store-modal-header">
           <div>
-            <h3>Shop at ${store}</h3>
-            <p class="store-modal-sub">${allItems.length} items — click each to search on ${store}'s site</p>
+            <h3>${isDelivery ? 'Instacart Delivery List' : store + ' Shopping List'}</h3>
+            <p class="store-modal-sub">${allItems.length} items \u00b7 ${aisles.length} sections \u00b7 optimized walk order</p>
           </div>
-          <button class="modal-close-btn" id="modal-cancel">✕</button>
+          <button class="modal-close-btn" id="list-modal-close">\u2715</button>
         </div>
-        <div class="store-item-links">
-          ${itemLinks}
+        <div class="aisle-list-scroll">
+          ${aisleHTML}
         </div>
         <div class="store-modal-footer">
-          <button class="btn-ghost" id="modal-cancel2">Close</button>
-          <a href="${firstUrl}" target="_blank" rel="noopener" class="btn-primary">Open ${store} website →</a>
+          <button class="btn-ghost" id="list-copy-btn">&#128203; Copy list</button>
+          <a href="${storeUrl}" target="_blank" rel="noopener" class="btn-primary">Open ${store} \u2192</a>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
-    document.getElementById('modal-cancel').addEventListener('click', () => modal.remove());
-    document.getElementById('modal-cancel2').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    const close = () => modal.remove();
+    document.getElementById('list-modal-close').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+    document.getElementById('list-copy-btn').addEventListener('click', () => {
+      const header = store + ' Shopping List\n' + '='.repeat(30) + '\n\n';
+      navigator.clipboard.writeText(header + plainText).then(() => {
+        const btn = document.getElementById('list-copy-btn');
+        if (btn) { btn.textContent = '\u2713 Copied!'; setTimeout(() => { btn.textContent = '\u{1F4CB} Copy list'; }, 2000); }
+      });
+    });
   },
 
   renderNav() {
