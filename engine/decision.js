@@ -83,6 +83,9 @@ const DecisionEngine = {
       return brandMap[key] || defaultBrands[key] || null;
     };
 
+    // Brand preferences from household profile
+    const brandPrefs = household.brand_preferences || {};
+
     // Build item lists per basket — prefer cached prices
     const buildItems = (store, mult) => items.map(item => {
       const storeData = cachedPrices[store];
@@ -90,7 +93,9 @@ const DecisionEngine = {
       const price = cachedItem
         ? parseFloat(cachedItem.price)
         : estimatePrice(item, mult);
-      const brand = getBrand(item.name);
+      // Preferred brand: user preference > cache brand > default brand
+      const prefBrand = brandPrefs[item.name.toLowerCase()];
+      const brand = (prefBrand && prefBrand !== 'any') ? prefBrand : getBrand(item.name);
       return { name: item.name, price: price.toFixed(2), ...(brand && { brand }) };
     });
 

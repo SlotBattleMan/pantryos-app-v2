@@ -258,11 +258,14 @@ Cheddar cheese"></textarea>
 
   renderItemRow(item, isSaved = false) {
     const id = item.id || item.tempId;
+    const brandPref = this.household?.brand_preferences?.[item.name.toLowerCase()];
+    const brandLabel = brandPref && brandPref !== 'any' ? brandPref : 'Any brand';
+    const brandClass = brandPref && brandPref !== 'any' ? 'brand-tag brand-tag-set' : 'brand-tag brand-tag-any';
     return `
       <div class="item-row" data-id="${id}">
         <div class="item-info">
           <span class="item-name">${item.name}</span>
-          ${item.category ? `<span class="item-cat">${item.category}</span>` : ''}
+          <button class="${brandClass}" data-item="${item.name}" data-brand="${brandPref || ''}" title="Set brand preference">${brandLabel} ▾</button>
         </div>
         <div class="item-controls">
           <span class="item-qty">×${item.quantity || 1}</span>
@@ -270,6 +273,104 @@ Cheddar cheese"></textarea>
         </div>
       </div>
     `;
+  },
+
+  async openBrandPicker(itemName, currentBrand) {
+    // Curated brands per item category
+    const brandOptions = {
+      'milk':            ['Organic Valley', 'Horizon Organic', 'ShopRite', 'Stop & Shop', 'Wegmans', 'Fairlife', 'Lactaid'],
+      'eggs':            ['Eggland\'s Best', 'Pete & Gerry\'s Organic', 'Vital Farms', 'ShopRite', 'Wegmans', 'Happy Egg'],
+      'bread':           ['Arnold', 'Pepperidge Farm', 'Dave\'s Killer Bread', 'Wonder', 'Nature\'s Own', 'ShopRite'],
+      'butter':          ['Land O Lakes', 'Kerrygold', 'Organic Valley', 'Wegmans', 'Challenge'],
+      'olive oil':       ['Colavita', 'California Olive Ranch', 'Kirkland', 'Bertolli', 'Pompeian'],
+      'chicken breast':  ['Perdue', 'Bell & Evans', 'ShopRite', 'Wegmans', 'Nature\'s Promise'],
+      'ground beef':     ['ShopRite', 'Wegmans', 'Laura\'s Lean', 'Nature Farm'],
+      'bacon':           ['Oscar Mayer', 'Applegate', 'Wright', 'ShopRite', 'Wegmans'],
+      'salmon':          ['Atlantic', 'Wild Planet', 'ShopRite', 'Wegmans'],
+      'orange juice':    ['Tropicana', 'Simply Orange', 'Florida\'s Natural', 'Minute Maid', 'ShopRite'],
+      'coffee':          ['Folgers', 'Dunkin\'', 'Eight O\'Clock', 'Green Mountain', 'Starbucks', 'ShopRite'],
+      'pasta':           ['Barilla', 'Ronzoni', 'De Cecco', 'Wegmans', 'ShopRite'],
+      'rice':            ['Uncle Ben\'s', 'Goya', 'Lundberg', 'ShopRite', 'Wegmans'],
+      'cereal':          ['Cheerios', 'Special K', 'Frosted Flakes', 'Honey Bunches of Oats', 'ShopRite'],
+      'yogurt':          ['Chobani', 'Fage', 'Siggi\'s', 'Stonyfield', 'ShopRite', 'Wegmans'],
+      'cheddar cheese':  ['Cabot', 'Tillamook', 'Cracker Barrel', 'ShopRite', 'Wegmans'],
+      'mozzarella':      ['Polly-O', 'BelGioioso', 'Sorrento', 'ShopRite'],
+      'peanut butter':   ['Jif', 'Skippy', 'Justin\'s', 'Teddie', 'ShopRite'],
+      'paper towels':    ['Bounty', 'Viva', 'Brawny', 'ShopRite'],
+      'toilet paper':    ['Charmin', 'Cottonelle', 'Scott', 'ShopRite'],
+      'dish soap':       ['Dawn', 'Method', 'Seventh Generation', 'ShopRite'],
+      'laundry detergent': ['Tide', 'Persil', 'Arm & Hammer', 'Gain', 'ShopRite'],
+      'shampoo':         ['Pantene', 'Dove', 'Herbal Essences', 'TRESemmé', 'Garnier'],
+      'toothpaste':      ['Colgate', 'Crest', 'Sensodyne', 'Tom\'s of Maine', 'Arm & Hammer'],
+    };
+
+    const key = itemName.toLowerCase();
+    const brands = brandOptions[key] || ['Store brand', 'National brand', 'Organic option'];
+
+    const modal = document.createElement('div');
+    modal.className = 'store-modal-overlay brand-picker-overlay';
+    modal.innerHTML = `
+      <div class="store-modal store-modal-wide">
+        <div class="store-modal-header">
+          <div>
+            <h3>Brand for ${itemName}</h3>
+            <p class="store-modal-sub">Saved to your household — remembered every run</p>
+          </div>
+          <button class="modal-close-btn" id="brand-modal-close">✕</button>
+        </div>
+        <div class="brand-options-grid">
+          <button class="brand-option-btn ${!currentBrand || currentBrand === 'any' ? 'brand-option-selected' : ''}" data-brand="any">
+            <span class="brand-option-name">Any brand</span>
+            <span class="brand-option-sub">Lowest available price</span>
+          </button>
+          ${brands.map(b => `
+            <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''}" data-brand="${b}">
+              <span class="brand-option-name">${b}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="store-modal-footer">
+          <button class="btn-ghost" id="brand-modal-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    document.getElementById('brand-modal-close').addEventListener('click', close);
+    document.getElementById('brand-modal-cancel').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+    // Handle brand selection
+    modal.querySelectorAll('.brand-option-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const selected = btn.dataset.brand;
+        close();
+
+        // Save to household brand_preferences
+        if (!this.household.brand_preferences) this.household.brand_preferences = {};
+        if (selected === 'any') {
+          delete this.household.brand_preferences[key];
+        } else {
+          this.household.brand_preferences[key] = selected;
+        }
+
+        // Persist to Supabase
+        await DB.saveBrandPreferences(this.household.id, this.household.brand_preferences);
+
+        // Update all item rows that match this item name
+        document.querySelectorAll(`.brand-tag[data-item="${itemName}"]`).forEach(tag => {
+          if (selected === 'any') {
+            tag.textContent = 'Any brand ▾';
+            tag.className = 'brand-tag brand-tag-any';
+          } else {
+            tag.textContent = selected + ' ▾';
+            tag.className = 'brand-tag brand-tag-set';
+          }
+          tag.dataset.brand = selected === 'any' ? '' : selected;
+        });
+      });
+    });
   },
 
   bindActions() {
@@ -303,6 +404,13 @@ Cheddar cheese"></textarea>
     });
 
     this.bindLibraryItems();
+
+    // Brand tag clicks — delegate from document for both saved + new items
+    document.addEventListener('click', e => {
+      const tag = e.target.closest('.brand-tag');
+      if (!tag) return;
+      this.openBrandPicker(tag.dataset.item, tag.dataset.brand || '');
+    }, { capture: false });
 
     document.getElementById('saved-items')?.addEventListener('click', async e => {
       const btn = e.target.closest('.delete-saved');
