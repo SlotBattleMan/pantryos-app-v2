@@ -31,6 +31,7 @@ const PantryView = {
     this.bindNav();
     await this.loadData();
     this.renderMain();
+    this.loadWeeklyCartItems(); // auto-load from dashboard if coming via weekly cart
     this.loadSuggestions(); // non-blocking
   },
 
@@ -65,6 +66,39 @@ const PantryView = {
     const { data: items } = await DB.getPantryItems(household.id);
     this.items = items || [];
     this.newItems = [];
+  },
+
+  loadWeeklyCartItems() {
+    const raw = sessionStorage.getItem('pantryos_weekly_cart');
+    if (!raw) return;
+    sessionStorage.removeItem('pantryos_weekly_cart');
+    try {
+      const weeklyItems = JSON.parse(raw);
+      if (!weeklyItems?.length) return;
+
+      // Show a banner
+      const banner = document.createElement('div');
+      banner.className = 'weekly-cart-banner';
+      banner.innerHTML = `
+        <span class="wc-banner-icon">✨</span>
+        <span>Your weekly cart has been pre-loaded with <strong>${weeklyItems.length} items</strong> based on your shopping history.</span>
+        <button class="wc-banner-dismiss" id="wc-banner-dismiss">✕</button>
+      `;
+      const pantryContent = document.querySelector('.pantry-content');
+      if (pantryContent) pantryContent.insertBefore(banner, pantryContent.firstChild);
+      document.getElementById('wc-banner-dismiss')?.addEventListener('click', () => banner.remove());
+
+      // Add each item
+      weeklyItems.forEach(item => {
+        if (!item.name) return;
+        // Skip items already in the saved list
+        const already = this.items.some(i => i.name.toLowerCase() === item.name.toLowerCase())
+          || this.newItems.some(i => i.name.toLowerCase() === item.name.toLowerCase());
+        if (!already) {
+          this.addItemDirect(item.name, item.category || '', item.quantity || 1);
+        }
+      });
+    } catch(e) {}
   },
 
   async loadSuggestions() {
