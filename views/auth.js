@@ -7,7 +7,7 @@ const AuthView = {
             <span class="logo-mark">P</span>
             <span class="logo-text">PantryOS</span>
           </div>
-          <p class="auth-tagline">Your household's buying decisions — handled.</p>
+          <p class="auth-tagline">Your grocery run, optimized.</p>
 
           <div class="auth-tabs">
             <button class="tab-btn active" data-tab="signin">Sign In</button>

@@ -33,7 +33,7 @@ const OnboardingView = {
     if (this.step === 1) {
       el.innerHTML = `
         <h2>Let's set up your household</h2>
-        <p class="step-desc">PantryOS personalizes every buying decision to your family's needs.</p>
+        <p class="step-desc">We'll compare prices at ShopRite, Wegmans, Stop & Shop, and Acme for your area — and build your lists by aisle.</p>
         <div class="form-group">
           <label>Household name</label>
           <input type="text" id="household-name" placeholder="The Smith Family" value="${this.data.name || ''}" />
