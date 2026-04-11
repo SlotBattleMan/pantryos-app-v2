@@ -176,7 +176,8 @@ const DashboardView = {
   },
 
   renderMain() {
-    const h = this.household;
+    try {
+    const h = this.household || {};
     const greeting = this.getGreeting();
     const modeLabel = { cheapest: 'Cheapest', balanced: 'Best Balance', easiest: 'Easiest' };
 
@@ -252,6 +253,15 @@ const DashboardView = {
     // Bind weekly cart actions if already loaded
     if (this.weeklyCart) {
       this.renderWeeklyCartSection();
+    }
+    } catch(e) {
+      console.error('Dashboard renderMain error:', e);
+      document.querySelector('.main-content').innerHTML = `
+        <div style="padding:40px;text-align:center;">
+          <h2 style="color:var(--text)">Welcome back</h2>
+          <p style="color:var(--text-muted);margin:12px 0 24px">Your dashboard is loading...</p>
+          <button onclick="Router.go('pantry')" class="btn-primary">Go to Pantry</button>
+        </div>`;
     }
   },
 
