@@ -52,16 +52,29 @@ const DecisionEngine = {
       'Meat & Seafood': [6,   18],
       'Pantry Staples': [2,   8],
       'Snacks':         [3,   9],
-      'Beverages':      [2,   6],
+      'Beverages':      [2,   6],   // non-alcoholic: juice, soda, water
+      'Alcohol':        [11,  20],  // beer 6-pack, wine 750ml
+      'Beer':           [11,  16],
+      'Wine':           [10,  22],
       'Frozen':         [4,   12],
       'Bakery':         [3,   7],
       'Household':      [3,   12],
       'Personal Care':  [4,   14],
     };
 
+    // Keyword-based category override for items without proper category tags
+    const categoryOverride = (item) => {
+      const name = item.name.toLowerCase();
+      if (name.includes('beer') || name.includes('lager') || name.includes('ale') || name.includes('ipa') || name.includes('seltzer')) return 'Beer';
+      if (name.includes('wine') || name.includes('champagne') || name.includes('prosecco') || name.includes('sparkling wine')) return 'Wine';
+      if (name.includes('whiskey') || name.includes('vodka') || name.includes('rum') || name.includes('tequila') || name.includes('liquor') || name.includes('spirits')) return 'Alcohol';
+      return item.category;
+    };
+
     const estimatePrice = (item, mult = 1) => {
       // Returns base unit price only — quantity is applied by buildItems
-      const range = categoryPrices[item.category] || [2, 8];
+      const effectiveCategory = categoryOverride(item);
+      const range = categoryPrices[effectiveCategory] || [2, 8];
       const base = range[0] + Math.random() * (range[1] - range[0]);
       return parseFloat((base * mult).toFixed(2));
     };
