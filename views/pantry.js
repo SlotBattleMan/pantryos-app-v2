@@ -1074,7 +1074,14 @@ Cheddar cheese"></textarea>
           .catch(() => {}) // don't let a single save failure block the run
       ));
 
-      const allItems = [...this.items, ...this.newItems.map(i => ({ name: i.name, category: i.category, quantity: i.quantity }))];
+      // Filter out any receipt artifacts that may have slipped into saved items
+      const artifactPattern = /adjustment|subtotal|loyalty|items found|special request|weight adjustment|replacement icon|final item price|original price|replaced item|^(canned goods|dry goods|dairy|produce|frozen|snacks|bakery|beverages|pantry|breakfast|international|meat|seafood)$/i;
+      const isValidItem = (name) => name && name.trim().length > 1 && !artifactPattern.test(name.trim()) && !/^[0-9]+(\.?[0-9]*)\s*(x|lb)/i.test(name.trim());
+
+      const allItems = [
+        ...this.items.filter(i => isValidItem(i.name)),
+        ...this.newItems.filter(i => isValidItem(i.name)).map(i => ({ name: i.name, category: i.category, quantity: i.quantity }))
+      ];
 
       // Run decision with a 20-second hard timeout
       const result = await Promise.race([
