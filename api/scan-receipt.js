@@ -54,10 +54,12 @@ Return a JSON object with this exact structure:
 }
 
 Rules:
-- Normalize item names to clean common names (not receipt abbreviations)
-- Skip non-food items like tax lines, subtotals, bag fees, payment lines
-- If an item was bought multiple times (e.g. 3x), set quantity accordingly
-- Price should be the per-unit price, not the total line price
+- ONLY include actual purchasable grocery/household products
+- SKIP everything that is not a real product: weight adjustments, loyalty savings, subtotals, tax lines, bag fees, payment lines, category headers, "Items found" lines, "Special Request" lines, deposit fees, bottle returns, quantity multiplier lines (e.g. "2 x"), price adjustment lines (e.g. "Adjustment: 3.0 lb -> 2.01 lb"), any line that is purely numeric, any line starting with a number followed by 'x' or 'lb'
+- Normalize item names to clean short names (e.g. "Wegmans Vitamin D Whole Milk (1 gal)" → "Whole Milk")
+- If an item was bought multiple times (e.g. 3x), set quantity accordingly  
+- Price should be the final unit price actually paid, not a subtotal or intermediate calculation
+- Maximum realistic price for any single grocery item is $50. If a price exceeds this, it is likely a subtotal — skip it
 - Return only valid JSON, no markdown`
               },
               {
@@ -84,6 +86,29 @@ Rules:
     if (!result.items || !Array.isArray(result.items)) {
       throw new Error('Invalid response structure');
     }
+
+    // Server-side filter: remove any non-product lines that slipped through
+    const skipPatterns = [
+      /^\d+(\.\d+)?\s*(x|lb|oz|ct|ea)/i,  // "2 x", "1.39 lb"
+      /adjustment/i,
+      /subtotal/i,
+      /loyalty/i,
+      /savings/i,
+      /weight/i,
+      /items found/i,
+      /special request/i,
+      /deposit/i,
+      /bottle return/i,
+      /^(produce|dairy|meat|bakery|frozen|snacks|beverages|pantry|canned|dry goods|international|breakfast)$/i,
+    ];
+
+    result.items = result.items.filter(item => {
+      if (!item.name || item.name.trim().length < 2) return false;
+      if (skipPatterns.some(p => p.test(item.name.trim()))) return false;
+      if (item.price && parseFloat(item.price) > 50) return false; // skip subtotals
+      if (item.price && parseFloat(item.price) <= 0) return false;
+      return true;
+    });
 
     // Feed verified prices into the price cache for this store
     if (result.store && result.items.length > 0) {

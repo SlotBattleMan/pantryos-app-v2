@@ -126,9 +126,14 @@ const DecisionEngine = {
       // Try store-specific cached price first
       const storeData = cachedPrices[store];
       const cachedItem = storeData?.items?.find(i => i.name.toLowerCase() === item.name.toLowerCase());
-      const price = cachedItem
+      let price = cachedItem
         ? parseFloat(cachedItem.price)
         : parseFloat((basePrices[item.name] * mult * (item.quantity || 1)).toFixed(2));
+
+      // Cap at $50 per item — anything higher is almost certainly a data error
+      price = Math.min(price, 50);
+      // Floor at $0.25
+      price = Math.max(price, 0.25);
 
       const prefBrand = brandPrefs[item.name.toLowerCase()];
       const brand = (prefBrand && prefBrand !== 'any') ? prefBrand : getBrand(item.name);
