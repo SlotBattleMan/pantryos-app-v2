@@ -8,44 +8,45 @@ const NJ_STORES_FILTER = NJ_STORES.map(s => encodeURIComponent(s)).join(',');
 
 async function getNJPrices(items) {
   try {
-    const allPrices = {};
+    // ONE query for all stores — no N+1 serial fetching
+    const url = `${SUPABASE_URL}/rest/v1/price_cache?store=in.(${NJ_STORES_FILTER})&select=store,item_name,price,unit,brand,updated_at&order=updated_at.desc&limit=2000`;
+    const res = await fetch(url, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+    });
+    if (!res.ok) return { allPrices: {}, cacheAgeHours: null };
+    const allRows = await res.json();
 
-    for (const item of items) {
-      const keyword = item.name.toLowerCase().trim().split(' ')[0];
-      const url = `${SUPABASE_URL}/rest/v1/price_cache?item_name=ilike.*${encodeURIComponent(keyword)}*&store=in.(${NJ_STORES_FILTER})&select=store,item_name,price,unit,brand,updated_at&order=updated_at.desc`;
-
-      const res = await fetch(url, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!res.ok) continue;
-      const rows = await res.json();
-
-      if (rows?.length) {
-        allPrices[item.name] = {};
-        for (const row of rows) {
-          if (!allPrices[item.name][row.store]) {
-            allPrices[item.name][row.store] = {
-              price: parseFloat(row.price),
-              unit: row.unit,
-              updated_at: row.updated_at,
-            };
-          }
-        }
+    // Build lookup map in memory — O(n) not O(n*m)
+    const cacheMap = {};
+    for (const row of allRows) {
+      const key = row.item_name.toLowerCase();
+      if (!cacheMap[key]) cacheMap[key] = {};
+      if (!cacheMap[key][row.store]) {
+        cacheMap[key][row.store] = {
+          price: parseFloat(row.price),
+          unit: row.unit,
+          brand: row.brand,
+          updated_at: row.updated_at,
+        };
       }
     }
 
-    // Get cache age from most recent entry
-    const ageUrl = `${SUPABASE_URL}/rest/v1/price_cache?store=in.(${NJ_STORES_FILTER})&select=updated_at&order=updated_at.desc&limit=1`;
-    const ageRes = await fetch(ageUrl, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-    });
-    const ageData = ageRes.ok ? await ageRes.json() : [];
-    const lastUpdated = ageData?.[0]?.updated_at;
+    // Match each requested item using exact then keyword fallback
+    const allPrices = {};
+    for (const item of items) {
+      const itemKey = item.name.toLowerCase().trim();
+      const keyword = itemKey.split(' ')[0];
+      let matched = cacheMap[itemKey];
+      if (!matched) {
+        const matchKey = Object.keys(cacheMap).find(k =>
+          k.includes(keyword) || keyword.includes(k.split(' ')[0])
+        );
+        if (matchKey) matched = cacheMap[matchKey];
+      }
+      if (matched) allPrices[item.name] = matched;
+    }
+
+    const lastUpdated = allRows[0]?.updated_at;
     const cacheAgeHours = lastUpdated
       ? Math.round((Date.now() - new Date(lastUpdated).getTime()) / 3600000)
       : null;
