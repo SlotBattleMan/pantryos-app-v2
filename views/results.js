@@ -53,6 +53,12 @@ const ResultsView = {
                     <span class="breakdown-item">
                       <span class="breakdown-item-name">${item.name}${item.quantity > 1 ? ` <span class='item-qty'>×${item.quantity}</span>` : ''}</span>
                       ${result?.cheapest?.items?.[i]?.brand ? `<span class="breakdown-brand">${result.cheapest.items[i].brand}</span>` : ''}
+                      ${(() => {
+                        const dietary = household?.dietary || [];
+                        const allergyTags = dietary.filter(d => d !== 'None' && d !== 'Vegetarian' && d !== 'Kosher' && d !== 'Halal');
+                        return allergyTags.length > 0 ? `<span class="allergy-safe-badge">✓ ${allergyTags[0]}</span>` : '';
+                      })()
+                      }
                     </span>
                     <span class="breakdown-price">$${result?.cheapest?.items?.[i]?.price || this.mockPrice(0.82)}</span>
                     <span class="breakdown-price">$${result?.balanced?.items?.[i]?.price || this.mockPrice(1.0)}</span>

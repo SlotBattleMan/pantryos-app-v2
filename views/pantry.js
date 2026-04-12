@@ -394,6 +394,19 @@ Cheddar cheese"></textarea>
     'laundry detergent': ['Original', 'Free & Gentle', 'Sport', 'Color', 'HE', 'Pods', 'Liquid', 'Powder'],
   },
 
+  // Allergy-safe brands by dietary need
+  allergyFriendlyBrands: {
+    'Gluten-free':      ['Bob\'s Red Mill', 'Enjoy Life', 'Udi\'s', 'Canyon Bakehouse', 'Schar', 'Banza', 'Jovial', 'Simple Mills'],
+    'Dairy-free':       ['Oatly', 'Silk', 'So Delicious', 'Violife', 'Miyoko\'s', 'Califia Farms', 'Earth Balance', 'Kite Hill'],
+    'Nut-free':         ['Sunbutter', 'Wow Butter', 'Enjoy Life', 'Made Good', 'Simple Mills'],
+    'Peanut-free':      ['Sunbutter', 'Almond Butter Co.', 'Justin\'s Almond', 'Wow Butter', 'Enjoy Life'],
+    'Tree-nut-free':    ['Jif', 'Skippy', 'Sunbutter', 'Wow Butter', 'Enjoy Life', 'Made Good'],
+    'Vegan':            ['Miyoko\'s', 'Violife', 'So Delicious', 'Earth Balance', 'Oatly', 'Tofurky', 'Field Roast', 'Beyond Meat'],
+    'Vegetarian':       ['Morningstar Farms', 'Gardein', 'Amy\'s', 'Boca', 'Field Roast', 'Beyond Meat'],
+    'Low-sodium':       ['Mrs. Dash', 'Herb-Ox', 'Pacific Foods Low Sodium', 'Swanson Natural Goodness'],
+    'Diabetic-friendly':['Lily\'s', 'Swerve', 'Bob\'s Red Mill', 'Nature\'s Own Double Fiber'],
+  },
+
   async openBrandPicker(itemName, currentBrand, currentFlavor) {
     // Curated brands per item category
     const brandOptions = {
@@ -584,6 +597,18 @@ Cheddar cheese"></textarea>
     }
     brands = brands || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley'];
 
+    // Surface allergy-friendly brands at the top based on household dietary needs
+    const dietary = this.household?.dietary || [];
+    const safeBrands = new Set();
+    dietary.forEach(d => {
+      (this.allergyFriendlyBrands[d] || []).forEach(b => safeBrands.add(b));
+    });
+    if (safeBrands.size > 0) {
+      const safeInList = brands.filter(b => safeBrands.has(b));
+      const rest = brands.filter(b => !safeBrands.has(b));
+      brands = [...safeInList, ...rest];
+    }
+
     // Check if this item has flavor options
     const flavors = this.flavorOptions[key] || (() => {
       const match = Object.keys(this.flavorOptions).find(k => k.includes(key) || key.includes(k));
@@ -609,8 +634,9 @@ Cheddar cheese"></textarea>
               <span class="brand-option-sub">Lowest available price</span>
             </button>
             ${brands.map(b => `
-              <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''}" data-brand="${b}">
+              <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''} ${safeBrands.has(b) ? 'brand-option-safe' : ''}" data-brand="${b}">
                 <span class="brand-option-name">${b}</span>
+                ${safeBrands.has(b) ? `<span class="brand-safe-badge">✓ ${dietary.filter(d => (this.allergyFriendlyBrands[d]||[]).includes(b)).join(', ')}</span>` : ''}
               </button>
             `).join('')}
           </div>

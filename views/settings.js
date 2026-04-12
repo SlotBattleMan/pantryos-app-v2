@@ -48,7 +48,7 @@ const SettingsView = {
   renderMain() {
     const h = this.household || {};
     const dietary = h.dietary || ['None'];
-    const restrictions = ['None','Gluten-free','Dairy-free','Vegetarian','Vegan','Nut-free','Kosher','Halal'];
+    const restrictions = ['None','Vegetarian','Vegan','Gluten-free','Dairy-free','Nut-free','Peanut-free','Tree-nut-free','Kosher','Halal','Low-sodium','Diabetic-friendly'];
     const modes = [
       { id: 'cheapest', icon: '💰', label: 'Cheapest' },
       { id: 'balanced', icon: '⚖️', label: 'Best Balance' },

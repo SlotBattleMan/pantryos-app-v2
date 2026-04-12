@@ -78,39 +78,125 @@ const OnboardingView = {
       };
 
     } else if (this.step === 2) {
-      const restrictions = ['None', 'Gluten-free', 'Dairy-free', 'Vegetarian', 'Vegan', 'Nut-free', 'Kosher', 'Halal'];
+      const restrictions = [
+        { val: 'None', label: 'None', group: null },
+        { val: 'Vegetarian', label: '🥦 Vegetarian', group: null },
+        { val: 'Vegan', label: '🌱 Vegan', group: null },
+        { val: 'Gluten-free', label: '🌾 Gluten-free', group: 'gluten' },
+        { val: 'Dairy-free', label: '🥛 Dairy-free', group: 'dairy' },
+        { val: 'Nut-free', label: '🥜 Nut-free (all)', group: 'nuts' },
+        { val: 'Peanut-free', label: 'Peanut-free', group: 'nuts' },
+        { val: 'Tree-nut-free', label: 'Tree-nut-free', group: 'nuts' },
+        { val: 'Kosher', label: '✡️ Kosher', group: null },
+        { val: 'Halal', label: '☪️ Halal', group: null },
+        { val: 'Low-sodium', label: '🧒 Low-sodium', group: null },
+        { val: 'Diabetic-friendly', label: '📊 Diabetic-friendly', group: null },
+      ];
+
+      // Allergy expansion prompts
+      const allergyExpansions = {
+        'Nut-free': {
+          question: 'Which nut allergies apply?',
+          sub: 'We’ll make sure to flag all relevant products.',
+          options: [
+            { val: 'Nut-free', label: 'All nuts (peanuts + tree nuts)', recommended: true },
+            { val: 'Peanut-free', label: 'Peanuts only' },
+            { val: 'Tree-nut-free', label: 'Tree nuts only (almonds, cashews, walnuts, etc.)' },
+          ]
+        },
+        'Gluten-free': {
+          question: 'How strict is your gluten-free diet?',
+          sub: 'This helps us pick the right products and brands.',
+          options: [
+            { val: 'Gluten-free', label: 'Strict (celiac or high sensitivity)', recommended: true },
+            { val: 'Gluten-free', label: 'Preference (wheat-free but oats OK)' },
+          ]
+        },
+        'Dairy-free': {
+          question: 'What’s your dairy restriction?',
+          sub: 'Some people avoid lactose but can handle butter or hard cheese.',
+          options: [
+            { val: 'Dairy-free', label: 'Fully dairy-free (vegan, allergy)', recommended: true },
+            { val: 'Dairy-free', label: 'Lactose-free only (can have hard cheese/butter)' },
+          ]
+        },
+      };
+
       el.innerHTML = `
-        <h2>Any dietary needs?</h2>
-        <p class="step-desc">Select all that apply. We'll filter products accordingly.</p>
-        <div class="chip-grid">
+        <h2>Dietary needs & allergies</h2>
+        <p class="step-desc">Select all that apply — we’ll filter products and highlight safe options for your household.</p>
+        <div class="chip-grid" id="dietary-chips">
           ${restrictions.map(r => `
-            <button class="chip ${this.data.dietary?.includes(r) ? 'chip-active' : ''}" data-val="${r}">${r}</button>
+            <button class="chip ${this.data.dietary?.includes(r.val) ? 'chip-active' : ''}" data-val="${r.val}" data-group="${r.group || ''}">${r.label}</button>
           `).join('')}
         </div>
+        <div id="allergy-followup" class="allergy-followup hidden"></div>
         <div class="nav-row">
           <button class="btn-ghost" id="back-btn">← Back</button>
           <button class="btn-primary" id="next-btn">Continue →</button>
         </div>
       `;
 
-      let selected = this.data.dietary || [];
-      document.querySelectorAll('.chip').forEach(chip => {
+      let selected = [...(this.data.dietary || [])];
+
+      const showFollowup = (triggerVal) => {
+        const expansion = allergyExpansions[triggerVal];
+        if (!expansion) return;
+        const followup = document.getElementById('allergy-followup');
+        followup.innerHTML = `
+          <div class="allergy-followup-inner">
+            <p class="allergy-followup-q">${expansion.question}</p>
+            <p class="allergy-followup-sub">${expansion.sub}</p>
+            <div class="allergy-followup-options">
+              ${expansion.options.map((opt, i) => `
+                <button class="allergy-opt-btn ${i === 0 ? 'allergy-opt-selected' : ''}" data-val="${opt.val}" data-replace="${triggerVal}">
+                  ${opt.label}
+                  ${opt.recommended ? '<span class="allergy-opt-tag">Recommended</span>' : ''}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        followup.classList.remove('hidden');
+        followup.querySelectorAll('.allergy-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            followup.querySelectorAll('.allergy-opt-btn').forEach(b => b.classList.remove('allergy-opt-selected'));
+            btn.classList.add('allergy-opt-selected');
+            // Swap the trigger value for the specific selected value
+            const replaceVal = btn.dataset.replace;
+            const newVal = btn.dataset.val;
+            selected = selected.filter(s => s !== replaceVal && s !== newVal);
+            selected.push(newVal);
+          });
+        });
+      };
+
+      document.querySelectorAll('#dietary-chips .chip').forEach(chip => {
         chip.addEventListener('click', () => {
           const val = chip.dataset.val;
           if (val === 'None') {
             selected = ['None'];
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-active'));
+            document.querySelectorAll('#dietary-chips .chip').forEach(c => c.classList.remove('chip-active'));
             chip.classList.add('chip-active');
+            document.getElementById('allergy-followup').classList.add('hidden');
             return;
           }
           selected = selected.filter(s => s !== 'None');
-          document.querySelector('.chip[data-val="None"]').classList.remove('chip-active');
+          document.querySelector('#dietary-chips .chip[data-val="None"]').classList.remove('chip-active');
           if (selected.includes(val)) {
             selected = selected.filter(s => s !== val);
             chip.classList.remove('chip-active');
+            // Hide followup if deselecting the trigger
+            if (allergyExpansions[val]) {
+              document.getElementById('allergy-followup').classList.add('hidden');
+            }
           } else {
             selected.push(val);
             chip.classList.add('chip-active');
+            // Show expansion prompt for allergy triggers
+            if (allergyExpansions[val]) {
+              showFollowup(val);
+            }
           }
         });
       });
