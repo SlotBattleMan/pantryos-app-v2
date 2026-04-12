@@ -1068,29 +1068,40 @@ Cheddar cheese"></textarea>
       const user = await Auth.getUser();
       if (!user) { Router.go('auth'); return; }
 
-      for (const item of this.newItems) {
-        await DB.savePantryItem({ household_id: this.household.id, name: item.name, category: item.category, quantity: item.quantity });
-      }
+      // Save new items in parallel (not sequential)
+      await Promise.all(this.newItems.map(item =>
+        DB.savePantryItem({ household_id: this.household.id, name: item.name, category: item.category, quantity: item.quantity })
+          .catch(() => {}) // don't let a single save failure block the run
+      ));
 
       const allItems = [...this.items, ...this.newItems.map(i => ({ name: i.name, category: i.category, quantity: i.quantity }))];
-      const result = await DecisionEngine.run(allItems, this.household);
 
-      await DB.saveDecision({
+      // Run decision with a 20-second hard timeout
+      const result = await Promise.race([
+        DecisionEngine.run(allItems, this.household),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
+      ]);
+
+      // Save decision in background — don't block navigation
+      DB.saveDecision({
         household_id: this.household.id,
         mode: this.household.default_mode || 'balanced',
         item_count: allItems.length,
         estimated_cost: result.balanced?.total || null,
         result_json: result,
-      });
+      }).catch(() => {});
 
       Router.go('results', { result, household: this.household, items: allItems });
     } catch (err) {
+      console.error('Decision error:', err.message);
       btn.disabled = false;
       btn.textContent = 'Get my basket →';
       const errDiv = document.createElement('div');
       errDiv.className = 'basket-error';
-      errDiv.textContent = '⚠️ Something went wrong. Please try again.';
-      document.querySelector('.page-header').appendChild(errDiv);
+      errDiv.textContent = err.message === 'timeout'
+        ? '⚠️ Analysis is taking too long — please try again.'
+        : '⚠️ Something went wrong. Please try again.';
+      document.querySelector('.page-header')?.appendChild(errDiv);
       setTimeout(() => errDiv.remove(), 4000);
     }
   }

@@ -4,11 +4,16 @@
 const DecisionEngine = {
   async run(items, household) {
     try {
+      // 12-second timeout on the server call
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
       const res = await fetch('/api/decision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items, household }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       const data = await res.json();
       if (data.mock || data.error) throw new Error(data.error || 'mock');
       return data;
@@ -19,15 +24,19 @@ const DecisionEngine = {
   },
 
   async runMock(items, household) {
-    // Try to pull real NJ prices from cache first
+    // Try to pull real NJ prices from cache first (5-second timeout)
     let cachedPrices = {};
     let brandMap = {}; // item name → brand from ShopRite cache
     try {
+      const priceController = new AbortController();
+      const priceTimeout = setTimeout(() => priceController.abort(), 5000);
       const res = await fetch('/api/store-prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),
+        signal: priceController.signal,
       });
+      clearTimeout(priceTimeout);
       if (res.ok) {
         const data = await res.json();
         if (data.hasData) {
