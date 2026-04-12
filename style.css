@@ -1024,6 +1024,41 @@ body {
 .item-controls { display: flex; align-items: center; gap: 8px; }
 .item-qty { font-size: 13px; color: var(--text-muted); font-weight: 500; }
 
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.qty-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.qty-btn:hover { background: var(--green-light); color: var(--green); }
+.qty-val {
+  min-width: 22px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 0 2px;
+  user-select: none;
+}
+
 /* ============================================
    Results
    ============================================ */

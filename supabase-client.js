@@ -31,6 +31,10 @@ const DB = {
     const { data, error } = await sb.from('households').upsert({ user_id: userId, ...profile, updated_at: new Date().toISOString() }).select().single();
     return { data, error };
   },
+  async updatePantryItem(itemId, fields) {
+    const { data, error } = await sb.from('pantry_items').update(fields).eq('id', itemId).select().single();
+    return { data, error };
+  },
   async saveBrandPreferences(householdId, brandPreferences) {
     const { data, error } = await sb.from('households').update({ brand_preferences: brandPreferences, updated_at: new Date().toISOString() }).eq('id', householdId).select().single();
     return { data, error };

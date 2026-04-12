@@ -292,6 +292,7 @@ Cheddar cheese"></textarea>
 
   renderItemRow(item, isSaved = false) {
     const id = item.id || item.tempId;
+    const qty = item.quantity || 1;
     const brandPref = this.household?.brand_preferences?.[item.name.toLowerCase()];
     const brandLabel = brandPref && brandPref !== 'any' ? brandPref : 'Any brand';
     const brandClass = brandPref && brandPref !== 'any' ? 'brand-tag brand-tag-set' : 'brand-tag brand-tag-any';
@@ -302,7 +303,11 @@ Cheddar cheese"></textarea>
           <button class="${brandClass}" data-item="${item.name}" data-brand="${brandPref || ''}" title="Set brand preference">${brandLabel} ▾</button>
         </div>
         <div class="item-controls">
-          <span class="item-qty">×${item.quantity || 1}</span>
+          <div class="qty-stepper">
+            <button class="qty-btn qty-dec ${isSaved ? 'qty-saved' : 'qty-new'}" data-id="${id}" data-saved="${isSaved}">−</button>
+            <span class="qty-val" id="qty-${id}">${qty}</span>
+            <button class="qty-btn qty-inc ${isSaved ? 'qty-saved' : 'qty-new'}" data-id="${id}" data-saved="${isSaved}">+</button>
+          </div>
           <button class="icon-btn ${isSaved ? 'delete-saved' : 'delete-new'}" data-id="${id}" title="Remove">✕</button>
         </div>
       </div>
@@ -597,12 +602,40 @@ Cheddar cheese"></textarea>
 
     this.bindLibraryItems();
 
-    // Brand tag clicks — delegate from document for both saved + new items
+    // Brand tag clicks
     document.addEventListener('click', e => {
       const tag = e.target.closest('.brand-tag');
       if (!tag) return;
       this.openBrandPicker(tag.dataset.item, tag.dataset.brand || '');
     }, { capture: false });
+
+    // Quantity stepper — + and − buttons on every item row
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.qty-btn');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const isSaved = btn.dataset.saved === 'true';
+      const isInc = btn.classList.contains('qty-inc');
+
+      if (isSaved) {
+        // Saved item: update in DB
+        const item = this.items.find(i => String(i.id) === String(id));
+        if (!item) return;
+        const newQty = Math.max(1, (item.quantity || 1) + (isInc ? 1 : -1));
+        item.quantity = newQty;
+        const valEl = document.getElementById('qty-' + id);
+        if (valEl) valEl.textContent = newQty;
+        DB.updatePantryItem(id, { quantity: newQty }).catch(() => {});
+      } else {
+        // New (unsaved) item
+        const item = this.newItems.find(i => String(i.tempId) === String(id));
+        if (!item) return;
+        const newQty = Math.max(1, (item.quantity || 1) + (isInc ? 1 : -1));
+        item.quantity = newQty;
+        const valEl = document.getElementById('qty-' + id);
+        if (valEl) valEl.textContent = newQty;
+      }
+    });
 
     document.getElementById('saved-items')?.addEventListener('click', async e => {
       const btn = e.target.closest('.delete-saved');
