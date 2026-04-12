@@ -175,6 +175,7 @@ const PantryView = {
             <p class="header-sub">Add what you need — PantryOS finds the best way to buy it.</p>
           </div>
           <div class="header-actions">
+            <button class="btn-ghost" id="scan-btn">📷 Scan receipt</button>
             <button class="btn-ghost" id="import-btn">📋 Import past order</button>
             <button class="btn-primary" id="get-basket-btn" ${this.items.length + this.newItems.length === 0 ? 'disabled' : ''}>
               Get my basket →
@@ -189,6 +190,29 @@ const PantryView = {
             <span class="suggestions-sub" id="suggestions-sub"></span>
           </div>
           <div class="suggestions-chips" id="suggestions-chips"></div>
+        </div>
+
+        <!-- Scan receipt panel -->
+        <div id="scan-panel" class="import-panel hidden">
+          <div class="import-header">
+            <h3>📷 Scan a receipt</h3>
+            <p class="import-desc">Take a photo of any grocery receipt — PantryOS reads every item, adds them to your list, and updates our price data for your store.</p>
+          </div>
+          <div class="scan-upload-area" id="scan-upload-area">
+            <input type="file" id="receipt-file" accept="image/*" capture="environment" style="display:none" />
+            <div class="scan-placeholder" id="scan-placeholder">
+              <span class="scan-icon">🧵</span>
+              <p class="scan-label">Tap to take a photo or choose from your library</p>
+              <p class="scan-sub">Supports JPG, PNG, HEIC · Works best in good lighting</p>
+            </div>
+            <img id="scan-preview" class="scan-preview hidden" alt="Receipt preview" />
+          </div>
+          <div class="import-actions">
+            <button class="btn-ghost" id="scan-cancel">Cancel</button>
+            <button class="btn-ghost" id="scan-choose">Choose photo</button>
+            <button class="btn-primary hidden" id="scan-run">Read receipt →</button>
+          </div>
+          <div id="scan-status" class="import-status hidden"></div>
         </div>
 
         <!-- Import panel -->
@@ -684,8 +708,44 @@ Cheddar cheese"></textarea>
     document.getElementById('item-name').addEventListener('keydown', e => { if (e.key === 'Enter') this.addItem(); });
     document.getElementById('get-basket-btn').addEventListener('click', () => this.runDecision());
 
+    // Scan receipt
+    document.getElementById('scan-btn').addEventListener('click', () => {
+      document.getElementById('scan-panel').classList.remove('hidden');
+      document.getElementById('import-panel').classList.add('hidden');
+    });
+    document.getElementById('scan-cancel').addEventListener('click', () => {
+      document.getElementById('scan-panel').classList.add('hidden');
+      this.resetScanPanel();
+    });
+    document.getElementById('scan-choose').addEventListener('click', () => {
+      document.getElementById('receipt-file').click();
+    });
+    document.getElementById('scan-upload-area').addEventListener('click', (e) => {
+      if (e.target.id === 'scan-upload-area' || e.target.id === 'scan-placeholder' ||
+          e.target.classList.contains('scan-label') || e.target.classList.contains('scan-sub') ||
+          e.target.classList.contains('scan-icon')) {
+        document.getElementById('receipt-file').click();
+      }
+    });
+    document.getElementById('receipt-file').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const preview = document.getElementById('scan-preview');
+        const placeholder = document.getElementById('scan-placeholder');
+        preview.src = ev.target.result;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        document.getElementById('scan-run').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('scan-run').addEventListener('click', () => this.runReceiptScan());
+
     document.getElementById('import-btn').addEventListener('click', () => {
       document.getElementById('import-panel').classList.remove('hidden');
+      document.getElementById('scan-panel').classList.add('hidden');
       document.getElementById('import-text').focus();
     });
     document.getElementById('import-cancel').addEventListener('click', () => {
@@ -822,6 +882,98 @@ Cheddar cheese"></textarea>
   updateBasketBtn() {
     const btn = document.getElementById('get-basket-btn');
     if (btn) btn.disabled = this.items.length + this.newItems.length === 0;
+  },
+
+  resetScanPanel() {
+    const preview = document.getElementById('scan-preview');
+    const placeholder = document.getElementById('scan-placeholder');
+    const runBtn = document.getElementById('scan-run');
+    const status = document.getElementById('scan-status');
+    const fileInput = document.getElementById('receipt-file');
+    if (preview) { preview.src = ''; preview.classList.add('hidden'); }
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (runBtn) runBtn.classList.add('hidden');
+    if (status) { status.className = 'import-status hidden'; status.textContent = ''; }
+    if (fileInput) fileInput.value = '';
+  },
+
+  async runReceiptScan() {
+    const fileInput = document.getElementById('receipt-file');
+    const file = fileInput?.files?.[0];
+    if (!file) return;
+
+    const btn = document.getElementById('scan-run');
+    const status = document.getElementById('scan-status');
+
+    btn.disabled = true;
+    btn.textContent = 'Reading receipt...';
+    status.className = 'import-status import-status-loading';
+    status.textContent = '🔍 Analyzing your receipt with AI...';
+    status.classList.remove('hidden');
+
+    try {
+      // Convert image to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Strip the data URL prefix to get pure base64
+          const result = reader.result;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const mediaType = file.type || 'image/jpeg';
+
+      const res = await fetch('/api/scan-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mediaType }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Could not read receipt');
+      }
+
+      // Add all items to the pantry list
+      let added = 0;
+      data.items.forEach(item => {
+        if (!item.name) return;
+        const already = this.items.some(i => i.name.toLowerCase() === item.name.toLowerCase())
+          || this.newItems.some(i => i.name.toLowerCase() === item.name.toLowerCase());
+        if (!already) {
+          this.addItemDirect(item.name, item.category || '', item.quantity || 1);
+          added++;
+        }
+      });
+
+      const storeMsg = data.store ? ` from ${data.store}` : '';
+      const priceMsg = data.items.filter(i => i.price).length > 0 ? ' · prices saved to our database' : '';
+
+      status.className = 'import-status import-status-success';
+      status.innerHTML = `✓ Added ${added} item${added !== 1 ? 's' : ''}${storeMsg}${priceMsg}`;
+
+      btn.disabled = false;
+      btn.textContent = 'Read receipt →';
+
+      // Auto-close after a moment if all went well
+      if (added > 0) {
+        setTimeout(() => {
+          document.getElementById('scan-panel').classList.add('hidden');
+          this.resetScanPanel();
+        }, 2500);
+      }
+
+    } catch (err) {
+      status.className = 'import-status import-status-error';
+      status.textContent = '❌ ' + (err.message || 'Could not read receipt. Try a clearer photo.');
+      btn.disabled = false;
+      btn.textContent = 'Read receipt →';
+    }
   },
 
   async runImport() {
