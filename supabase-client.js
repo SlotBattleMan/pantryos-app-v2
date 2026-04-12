@@ -25,6 +25,8 @@ const Auth = {
 const DB = {
   async getHousehold(userId) {
     const { data, error } = await sb.from('households').select('*').eq('user_id', userId).single();
+    // PGRST116 = no rows found — not an error, just a new user with no household yet
+    if (error?.code === 'PGRST116') return { data: null, error: null };
     return { data, error };
   },
   async saveHousehold(userId, profile) {
