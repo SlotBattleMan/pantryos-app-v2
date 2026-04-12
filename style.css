@@ -2616,3 +2616,40 @@ body {
   padding: 2px 7px;
   margin-top: 2px;
 }
+
+/* Shopping time estimate */
+.checkout-time-estimate {
+  margin-bottom: 16px;
+}
+
+.time-estimate-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--green-light);
+  border: 1px solid #A8D4BE;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+
+.time-estimate-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.time-estimate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.time-estimate-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.time-estimate-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}

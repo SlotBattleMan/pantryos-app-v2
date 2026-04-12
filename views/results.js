@@ -88,23 +88,22 @@ const ResultsView = {
     document.getElementById('back-btn').addEventListener('click', () => Router.go('pantry'));
     document.getElementById('new-run-btn').addEventListener('click', () => Router.go('pantry'));
 
-    // Accept button → open store search
-    document.getElementById('accept-btn').addEventListener('click', () => {
-      // Checkout buttons on each card
-      document.querySelectorAll('.checkout-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const mode = btn.dataset.mode;
-          const basketData = result[mode];
-          this.openCheckout(mode, basketData, result, items, household);
-        });
+    // Checkout buttons — bind immediately, not inside accept handler
+    document.querySelectorAll('.checkout-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const mode = btn.dataset.mode;
+        const basketData = result[mode];
+        this.openCheckout(mode, basketData, result, items, household);
       });
+    });
 
+    // Accept button → open store search for selected basket
+    document.getElementById('accept-btn').addEventListener('click', () => {
       const selectedCard = document.querySelector('.basket-card.basket-selected');
-      const selectedMode = selectedCard?.dataset.mode || mode;
+      const selectedMode = selectedCard?.dataset.mode || 'cheapest';
       const store = result?.[selectedMode]?.store || this.mockStore(selectedMode);
-      const itemNames = (items || []).map(i => i.name).join(', ');
-      this.openStoreSearch(store, itemNames, items);
+      this.openStoreSearch(store, null, items);
     });
 
     // Basket card selection
@@ -240,12 +239,21 @@ const ResultsView = {
           <div class="checkout-section-chips">${aislePreviewHTML}</div>
         </div>
 
+        <div class="checkout-time-estimate" id="co-time-estimate"></div>
+
         <div class="checkout-actions">
           <button class="checkout-action-btn" id="co-list-btn">
             <span class="checkout-action-icon">🛒</span>
             <span class="checkout-action-text">
               <span class="checkout-action-label">View shopping list</span>
               <span class="checkout-action-sub">Aisle-by-aisle walk order</span>
+            </span>
+          </button>
+          <button class="checkout-action-btn" id="co-download-btn">
+            <span class="checkout-action-icon">⬇️</span>
+            <span class="checkout-action-text">
+              <span class="checkout-action-label">Download list</span>
+              <span class="checkout-action-sub">Save optimized list as PDF</span>
             </span>
           </button>
           <button class="checkout-action-btn" id="co-copy-btn">
@@ -281,6 +289,27 @@ const ResultsView = {
 
     document.body.appendChild(modal);
 
+    // Render time estimate
+    const aisleCount = aisles.length;
+    const itemCount = allItems.length;
+    // ~2 min/aisle for walking + ~30s per item average
+    const walkMins = aisleCount * 2;
+    const pickMins = Math.ceil(itemCount * 0.5);
+    const totalMins = walkMins + pickMins;
+    const timeLabel = totalMins <= 15 ? 'Quick run' : totalMins <= 30 ? 'Standard shop' : 'Larger shop';
+    const timeEl = document.getElementById('co-time-estimate');
+    if (timeEl) {
+      timeEl.innerHTML = `
+        <div class="time-estimate-bar">
+          <span class="time-estimate-icon">⏱️</span>
+          <div class="time-estimate-body">
+            <span class="time-estimate-label">${timeLabel} — est. ${totalMins}–${totalMins + 5} min in-store</span>
+            <span class="time-estimate-sub">${aisleCount} sections · ${itemCount} items · optimized walk order</span>
+          </div>
+        </div>
+      `;
+    }
+
     const close = () => modal.remove();
     document.getElementById('checkout-close').addEventListener('click', close);
     document.getElementById('checkout-cancel').addEventListener('click', close);
@@ -290,6 +319,55 @@ const ResultsView = {
     document.getElementById('co-list-btn').addEventListener('click', () => {
       close();
       this.openStoreSearch(store, null, enrichedItems);
+    });
+
+    // Download list as printable HTML (browser save-as-PDF)
+    document.getElementById('co-download-btn').addEventListener('click', () => {
+      const rows = aisles.map(a => `
+        <div class="section">
+          <div class="section-title">${a.emoji} ${a.section} — ${a.aisle}</div>
+          ${a.items.map(i => {
+            const b = i.brand ? `<span class="brand">${i.brand}</span>` : '';
+            const q = (i.quantity || 1) > 1 ? ` ×${i.quantity}` : '';
+            return `<div class="item"><span class="check"></span><span class="name">${i.name}${q}</span>${b}</div>`;
+          }).join('')}
+        </div>`).join('');
+
+      const html = `<!DOCTYPE html><html><head><title>PantryOS — ${store} Shopping List</title>
+        <meta charset="UTF-8">
+        <style>
+          @page { margin: 0.75in; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1F2933; font-size: 13px; max-width: 680px; margin: 0 auto; padding: 32px; }
+          h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+          .meta { color: #7B8794; font-size: 12px; margin-bottom: 8px; }
+          .time { display: inline-block; background: #DDE9E2; color: #2E7D5A; font-weight: 700; font-size: 12px; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; }
+          .section { margin-bottom: 20px; page-break-inside: avoid; }
+          .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #7B8794; border-bottom: 1.5px solid #E8E4D9; padding-bottom: 5px; margin-bottom: 8px; }
+          .item { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid #F5F2EC; }
+          .item:last-child { border: none; }
+          .check { width: 14px; height: 14px; border: 1.5px solid #B0B7C3; border-radius: 3px; flex-shrink: 0; }
+          .name { flex: 1; font-weight: 500; text-transform: capitalize; }
+          .brand { font-size: 11px; color: #7B8794; }
+          .total { font-size: 16px; font-weight: 800; margin-top: 24px; padding-top: 12px; border-top: 2px solid #E8E4D9; color: #1F2933; }
+          .footer { margin-top: 32px; font-size: 10px; color: #B0B7C3; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head><body>
+        <h1>PantryOS Shopping List</h1>
+        <p class="meta">${store} · ${itemCount} items · ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+        <span class="time">⏱️ Est. ${totalMins}–${totalMins + 5} min in-store</span>
+        ${rows}
+        <div class="total">Estimated total: $${total}</div>
+        <p class="footer">Generated by PantryOS · pantryos-app-v2.vercel.app</p>
+      </body></html>`;
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `PantryOS-ShoppingList-${store.replace(/[^a-z0-9]/gi, '-')}-${new Date().toISOString().slice(0,10)}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
     // Copy / send to phone
