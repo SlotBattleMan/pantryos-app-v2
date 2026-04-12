@@ -293,14 +293,18 @@ Cheddar cheese"></textarea>
   renderItemRow(item, isSaved = false) {
     const id = item.id || item.tempId;
     const qty = item.quantity || 1;
-    const brandPref = this.household?.brand_preferences?.[item.name.toLowerCase()];
-    const brandLabel = brandPref && brandPref !== 'any' ? brandPref : 'Any brand';
+    const brandPrefRaw = this.household?.brand_preferences?.[item.name.toLowerCase()];
+    const brandPref = typeof brandPrefRaw === 'object' ? brandPrefRaw?.brand : brandPrefRaw;
+    const flavorPref = typeof brandPrefRaw === 'object' ? brandPrefRaw?.flavor : null;
+    const brandLabel = brandPref && brandPref !== 'any'
+      ? (flavorPref ? brandPref + ' · ' + flavorPref : brandPref)
+      : 'Any brand';
     const brandClass = brandPref && brandPref !== 'any' ? 'brand-tag brand-tag-set' : 'brand-tag brand-tag-any';
     return `
       <div class="item-row" data-id="${id}">
         <div class="item-info">
           <span class="item-name">${item.name}</span>
-          <button class="${brandClass}" data-item="${item.name}" data-brand="${brandPref || ''}" title="Set brand preference">${brandLabel} ▾</button>
+          <button class="${brandClass}" data-item="${item.name}" data-brand="${brandPref || ''}" data-flavor="${flavorPref || ''}" title="Set brand preference">${brandLabel} ▾</button>
         </div>
         <div class="item-controls">
           <div class="qty-stepper">
@@ -314,7 +318,43 @@ Cheddar cheese"></textarea>
     `;
   },
 
-  async openBrandPicker(itemName, currentBrand) {
+  // Flavor options for items where variety matters
+  flavorOptions: {
+    'ice cream':         ['Vanilla', 'Chocolate', 'Strawberry', 'Cookies & Cream', 'Mint Chocolate Chip', 'Rocky Road', 'Butter Pecan', 'Coffee', 'Neapolitan'],
+    'frozen yogurt':     ['Vanilla', 'Chocolate', 'Strawberry', 'Mango', 'Mixed Berry'],
+    'ice pops':          ['Cherry', 'Grape', 'Orange', 'Strawberry', 'Lemon-Lime', 'Watermelon', 'Mixed Berry', 'Tropical'],
+    'yogurt':            ['Plain', 'Vanilla', 'Strawberry', 'Blueberry', 'Peach', 'Mixed Berry', 'Greek', 'Honey'],
+    'soda':              ['Cola', 'Diet Cola', 'Lemon-Lime', 'Orange', 'Root Beer', 'Ginger Ale', 'Grape', 'Cherry'],
+    'chips':             ['Original', 'BBQ', 'Sour Cream & Onion', 'Salt & Vinegar', 'Cheddar', 'Jalapeño', 'Sea Salt'],
+    'potato chips':      ['Original', 'BBQ', 'Sour Cream & Onion', 'Salt & Vinegar', 'Cheddar', 'Jalapeño', 'Sea Salt'],
+    'tortilla chips':    ['Original', 'Hint of Lime', 'Multigrain', 'Scoops', 'Blue Corn', 'White Corn'],
+    'cookies':           ['Chocolate Chip', 'Oreo', 'Snickerdoodle', 'Oatmeal Raisin', 'Peanut Butter', 'Sugar', 'Double Chocolate'],
+    'cereal':            ['Original', 'Honey Nut', 'Frosted', 'Berry', 'Cinnamon', 'Chocolate', 'Granola'],
+    'oatmeal':           ['Original', 'Maple & Brown Sugar', 'Apple Cinnamon', 'Honey', 'Blueberry', 'Peaches & Cream'],
+    'coffee':            ['Original Roast', 'Dark Roast', 'Medium Roast', 'Decaf', 'French Roast', 'Breakfast Blend', 'Espresso'],
+    'tea':               ['Green', 'Black', 'Chamomile', 'Peppermint', 'Earl Grey', 'English Breakfast', 'Oolong', 'Herbal'],
+    'sparkling water':   ['Lime', 'Lemon', 'Grapefruit', 'Peach', 'Mango', 'Coconut', 'Unflavored', 'Berry'],
+    'granola bars':      ['Peanut Butter', 'Chocolate', 'Oats & Honey', 'Dark Chocolate', 'Berry', 'Almond', 'Coconut'],
+    'popcorn':           ['Butter', 'Sea Salt', 'White Cheddar', 'Kettle', 'Caramel', 'Movie Theater Butter'],
+    'bread':             ['White', 'Whole Wheat', 'Multigrain', 'Sourdough', 'Rye', 'Brioche', 'Potato', 'Gluten-Free'],
+    'pasta':             ['Spaghetti', 'Penne', 'Rigatoni', 'Fettuccine', 'Linguine', 'Bow Tie', 'Angel Hair', 'Rotini'],
+    'rice':              ['White Long Grain', 'Brown', 'Jasmine', 'Basmati', 'Wild', 'Spanish', 'Yellow'],
+    'frozen pizza':      ['Pepperoni', 'Cheese', 'Supreme', 'Veggie', 'Margherita', 'BBQ Chicken', 'Meat Lovers'],
+    'frozen waffles':    ['Original', 'Blueberry', 'Buttermilk', 'Whole Grain', 'Chocolate Chip', 'Cinnamon'],
+    'frozen pancakes':   ['Original', 'Blueberry', 'Buttermilk', 'Whole Wheat', 'Chocolate Chip'],
+    'hot dogs':          ['Beef', 'Pork & Beef', 'Uncured', 'Turkey', 'Bun Length', 'Jumbo'],
+    'sausage':           ['Sweet Italian', 'Hot Italian', 'Mild', 'Chicken', 'Breakfast', 'Andouille', 'Chorizo'],
+    'cream cheese':      ['Original', 'Light', 'Whipped', 'Strawberry', 'Chive & Onion', 'Garden Vegetable'],
+    'hummus':            ['Classic', 'Roasted Garlic', 'Red Pepper', 'Spinach & Artichoke', 'Buffalo', 'Plain'],
+    'salsa':             ['Mild', 'Medium', 'Hot', 'Mango', 'Verde', 'Black Bean & Corn'],
+    'peanut butter':     ['Creamy', 'Crunchy', 'Natural', 'Reduced Fat', 'Honey'],
+    'jelly':             ['Strawberry', 'Grape', 'Raspberry', 'Mixed Berry', 'Apricot', 'Blackberry'],
+    'juice':             ['Orange', 'Apple', 'Grape', 'Cranberry', 'Pineapple', 'Mango', 'Vegetable'],
+    'orange juice':      ['Original', 'Pulp Free', 'Low Acid', 'With Calcium', 'Homestyle'],
+    'apple juice':       ['Original', 'No Sugar Added', 'Organic', 'White Grape Apple'],
+  },
+
+  async openBrandPicker(itemName, currentBrand, currentFlavor) {
     // Curated brands per item category
     const brandOptions = {
 
@@ -504,30 +544,44 @@ Cheddar cheese"></textarea>
     }
     brands = brands || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley'];
 
+    // Check if this item has flavor options
+    const flavors = this.flavorOptions[key] || (() => {
+      const match = Object.keys(this.flavorOptions).find(k => k.includes(key) || key.includes(k));
+      return match ? this.flavorOptions[match] : null;
+    })();
+
     const modal = document.createElement('div');
     modal.className = 'store-modal-overlay brand-picker-overlay';
     modal.innerHTML = `
       <div class="store-modal store-modal-wide">
         <div class="store-modal-header">
           <div>
-            <h3>Brand for ${itemName}</h3>
+            <h3>Preferences for ${itemName}</h3>
             <p class="store-modal-sub">Saved to your household — remembered every run</p>
           </div>
           <button class="modal-close-btn" id="brand-modal-close">✕</button>
         </div>
-        <div class="brand-options-grid">
-          <button class="brand-option-btn ${!currentBrand || currentBrand === 'any' ? 'brand-option-selected' : ''}" data-brand="any">
-            <span class="brand-option-name">Any brand</span>
-            <span class="brand-option-sub">Lowest available price</span>
-          </button>
-          ${brands.map(b => `
-            <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''}" data-brand="${b}">
-              <span class="brand-option-name">${b}</span>
+        <div id="brand-step">
+          <p class="picker-step-label">Step 1 of ${flavors ? 2 : 1} — Brand</p>
+          <div class="brand-options-grid">
+            <button class="brand-option-btn ${!currentBrand || currentBrand === 'any' ? 'brand-option-selected' : ''}" data-brand="any">
+              <span class="brand-option-name">Any brand</span>
+              <span class="brand-option-sub">Lowest available price</span>
             </button>
-          `).join('')}
+            ${brands.map(b => `
+              <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''}" data-brand="${b}">
+                <span class="brand-option-name">${b}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        <div id="flavor-step" class="hidden">
+          <p class="picker-step-label">Step 2 of 2 — Flavor / Type</p>
+          <div class="brand-options-grid" id="flavor-grid"></div>
         </div>
         <div class="store-modal-footer">
           <button class="btn-ghost" id="brand-modal-cancel">Cancel</button>
+          <button class="btn-ghost hidden" id="brand-back-btn">← Back</button>
         </div>
       </div>
     `;
@@ -538,35 +592,74 @@ Cheddar cheese"></textarea>
     document.getElementById('brand-modal-cancel').addEventListener('click', close);
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
-    // Handle brand selection
-    modal.querySelectorAll('.brand-option-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const selected = btn.dataset.brand;
-        close();
+    let selectedBrand = currentBrand || null;
 
-        // Save to household brand_preferences
-        if (!this.household.brand_preferences) this.household.brand_preferences = {};
-        if (selected === 'any') {
-          delete this.household.brand_preferences[key];
-        } else {
-          this.household.brand_preferences[key] = selected;
+    const savePref = async (brand, flavor) => {
+      if (!this.household.brand_preferences) this.household.brand_preferences = {};
+      if (!brand || brand === 'any') {
+        delete this.household.brand_preferences[key];
+      } else {
+        this.household.brand_preferences[key] = flavor ? { brand, flavor } : brand;
+      }
+      await DB.saveBrandPreferences(this.household.id, this.household.brand_preferences);
+
+      // Update tag in DOM
+      const displayLabel = !brand || brand === 'any' ? 'Any brand' : (flavor ? brand + ' · ' + flavor : brand);
+      document.querySelectorAll(`.brand-tag[data-item="${itemName}"]`).forEach(tag => {
+        tag.textContent = displayLabel + ' ▾';
+        tag.className = brand && brand !== 'any' ? 'brand-tag brand-tag-set' : 'brand-tag brand-tag-any';
+        tag.dataset.brand = brand || '';
+        tag.dataset.flavor = flavor || '';
+      });
+    };
+
+    // Brand selection
+    modal.querySelectorAll('#brand-step .brand-option-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        selectedBrand = btn.dataset.brand;
+
+        if (!flavors || selectedBrand === 'any') {
+          // No flavor step needed
+          close();
+          await savePref(selectedBrand, null);
+          return;
         }
 
-        // Persist to Supabase
-        await DB.saveBrandPreferences(this.household.id, this.household.brand_preferences);
+        // Show flavor step
+        document.getElementById('brand-step').classList.add('hidden');
+        document.getElementById('flavor-step').classList.remove('hidden');
+        document.getElementById('brand-back-btn').classList.remove('hidden');
+        document.getElementById('brand-modal-cancel').classList.add('hidden');
 
-        // Update all item rows that match this item name
-        document.querySelectorAll(`.brand-tag[data-item="${itemName}"]`).forEach(tag => {
-          if (selected === 'any') {
-            tag.textContent = 'Any brand ▾';
-            tag.className = 'brand-tag brand-tag-any';
-          } else {
-            tag.textContent = selected + ' ▾';
-            tag.className = 'brand-tag brand-tag-set';
-          }
-          tag.dataset.brand = selected === 'any' ? '' : selected;
+        const flavorGrid = document.getElementById('flavor-grid');
+        const curFlavor = currentFlavor || '';
+        flavorGrid.innerHTML = [
+          `<button class="brand-option-btn ${!curFlavor ? 'brand-option-selected' : ''}" data-flavor="">
+            <span class="brand-option-name">Any flavor</span>
+            <span class="brand-option-sub">No preference</span>
+          </button>`,
+          ...flavors.map(f => `
+            <button class="brand-option-btn ${curFlavor === f ? 'brand-option-selected' : ''}" data-flavor="${f}">
+              <span class="brand-option-name">${f}</span>
+            </button>`)
+        ].join('');
+
+        flavorGrid.querySelectorAll('.brand-option-btn').forEach(fb => {
+          fb.addEventListener('click', async () => {
+            const flavor = fb.dataset.flavor || null;
+            close();
+            await savePref(selectedBrand, flavor);
+          });
         });
       });
+    });
+
+    // Back button
+    document.getElementById('brand-back-btn').addEventListener('click', () => {
+      document.getElementById('flavor-step').classList.add('hidden');
+      document.getElementById('brand-step').classList.remove('hidden');
+      document.getElementById('brand-back-btn').classList.add('hidden');
+      document.getElementById('brand-modal-cancel').classList.remove('hidden');
     });
   },
 
@@ -606,7 +699,7 @@ Cheddar cheese"></textarea>
     document.addEventListener('click', e => {
       const tag = e.target.closest('.brand-tag');
       if (!tag) return;
-      this.openBrandPicker(tag.dataset.item, tag.dataset.brand || '');
+      this.openBrandPicker(tag.dataset.item, tag.dataset.brand || '', tag.dataset.flavor || '');
     }, { capture: false });
 
     // Quantity stepper — + and − buttons on every item row

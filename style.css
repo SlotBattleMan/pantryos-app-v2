@@ -2409,3 +2409,60 @@ body {
   .cat-tab { padding: 4px 10px; font-size: 11px; }
   .nav-links { gap: 2px; }
 }
+
+/* Brand + Flavor picker */
+.picker-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.brand-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+.brand-option-btn:hover {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.brand-option-selected {
+  border-color: var(--green) !important;
+  background: var(--green-light) !important;
+}
+.brand-option-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.brand-option-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+  .brand-options-grid { grid-template-columns: 1fr; }
+}
