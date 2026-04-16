@@ -46,7 +46,10 @@ const DB = {
     return { data: data || [], error };
   },
   async savePantryItem(item) {
-    const { data, error } = await sb.from('pantry_items').upsert(item).select().single();
+    // Use ignoreDuplicates to prevent duplicate names per household
+    const { data, error } = await sb.from('pantry_items')
+      .upsert(item, { onConflict: 'household_id,name', ignoreDuplicates: true })
+      .select().single();
     return { data, error };
   },
   async deletePantryItem(id) {

@@ -31,13 +31,32 @@ async function getNJPrices(items) {
       }
     }
 
-    // Match each requested item using exact then keyword fallback
+    // Normalize long product names to core grocery terms for cache matching
+    // e.g. "Wegmans Vitamin D Whole Milk (1 gal)" -> "whole milk"
+    const normalizeItemName = (name) => {
+      let n = name.toLowerCase()
+        .replace(/wegmans|shoprite|stop & shop|acme|pepperidge farm|general mills|orville redenbacher|pepperidge|goldfish|farmhouse|organic|family pack|family size|value size|large size|classic bags|baked snack/gi, '')
+        .replace(/\(.*?\)/g, '')  // remove (size) in parens
+        .replace(/~\s*[\d.]+\s*(lb|oz|ct|gal|fl oz)/gi, '') // remove weight specs
+        .replace(/[,.-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      // Further simplify: take the most meaningful 2-3 words
+      const words = n.split(' ').filter(w => w.length > 2);
+      return words.slice(0, 3).join(' ');
+    };
+
+    // Match each requested item using exact then normalized then keyword fallback
     const allPrices = {};
     for (const item of items) {
       const itemKey = item.name.toLowerCase().trim();
-      const keyword = itemKey.split(' ')[0];
-      let matched = cacheMap[itemKey];
+      const normalized = normalizeItemName(item.name);
+      const keyword = normalized.split(' ')[0];
+
+      let matched = cacheMap[itemKey];                          // exact
+      if (!matched) matched = cacheMap[normalized];             // normalized
       if (!matched) {
+        // keyword scan
         const matchKey = Object.keys(cacheMap).find(k =>
           k.includes(keyword) || keyword.includes(k.split(' ')[0])
         );
