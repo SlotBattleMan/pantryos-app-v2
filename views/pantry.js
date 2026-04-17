@@ -345,9 +345,10 @@ Cheddar cheese"></textarea>
   // Flavor options for items where variety matters
   flavorOptions: {
     'ice cream':         ['Vanilla', 'Chocolate', 'Strawberry', 'Cookies & Cream', 'Mint Chocolate Chip', 'Rocky Road', 'Butter Pecan', 'Coffee', 'Neapolitan'],
-    'frozen yogurt':     ['Vanilla', 'Chocolate', 'Strawberry', 'Mango', 'Mixed Berry'],
+    'frozen yogurt':     ['Vanilla', 'Chocolate', 'Strawberry', 'Mango', 'Mixed Berry', 'Skyr'],
+    'skyr':              ['Plain', 'Vanilla', 'Strawberry', 'Blueberry', 'Peach', 'Mixed Berry', 'Coconut', 'Raspberry'],
     'ice pops':          ['Cherry', 'Grape', 'Orange', 'Strawberry', 'Lemon-Lime', 'Watermelon', 'Mixed Berry', 'Tropical'],
-    'yogurt':            ['Plain', 'Vanilla', 'Strawberry', 'Blueberry', 'Peach', 'Mixed Berry', 'Greek', 'Honey'],
+    'yogurt':            ['Plain', 'Vanilla', 'Strawberry', 'Blueberry', 'Peach', 'Mixed Berry', 'Greek', 'Honey', 'Skyr'],
     'soda':              ['Cola', 'Diet Cola', 'Lemon-Lime', 'Orange', 'Root Beer', 'Ginger Ale', 'Grape', 'Cherry'],
     'chips':             ['Original', 'BBQ', 'Sour Cream & Onion', 'Salt & Vinegar', 'Cheddar', 'Jalapeño', 'Sea Salt'],
     'potato chips':      ['Original', 'BBQ', 'Sour Cream & Onion', 'Salt & Vinegar', 'Cheddar', 'Jalapeño', 'Sea Salt'],
@@ -463,7 +464,8 @@ Cheddar cheese"></textarea>
   'parmesan': ['BelGioioso', 'Kraft', 'Sargento', 'Cello', 'Galbani', 'ShopRite', 'Wegmans'],
   'cream cheese': ['Philadelphia', 'Breakstone\'s', 'Organic Valley', 'Cabot', 'ShopRite', 'Wegmans', 'Stop & Shop'],
   'sour cream': ['Daisy', 'Breakstone\'s', 'Organic Valley', 'Hood', 'Cabot', 'ShopRite', 'Wegmans'],
-  'yogurt': ['Chobani', 'Fage', 'Siggi\'s', 'Stonyfield', 'Dannon', 'ShopRite', 'Wegmans'],
+  'yogurt': ['Chobani', 'Fage', 'Siggi\'s', 'Icelandic Provisions', 'Stonyfield', 'Dannon', 'Kite Hill', 'ShopRite', 'Wegmans'],
+  'skyr': ['Icelandic Provisions', 'Siggi\'s', 'Chobani', 'Skyr.is', 'Wegmans', 'ShopRite'],
   'cottage cheese': ['Breakstone\'s', 'Daisy', 'Good Culture', 'Hood', 'Organic Valley', 'ShopRite', 'Wegmans'],
   'heavy cream': ['Hood', 'Organic Valley', 'Horizon Organic', 'Land O Lakes', 'ShopRite', 'Wegmans', 'Stop & Shop'],
   'half and half': ['Hood', 'Land O Lakes', 'Organic Valley', 'Horizon Organic', 'ShopRite', 'Wegmans', 'Stop & Shop'],
