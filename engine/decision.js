@@ -75,28 +75,50 @@ const DecisionEngine = {
 
     // Category-based price estimation (fallback only)
     const categoryPrices = {
-      'Produce':        [1.5, 4.5],
-      'Dairy':          [3,   7],
-      'Meat & Seafood': [6,   18],
-      'Pantry Staples': [2,   8],
-      'Snacks':         [3,   9],
-      'Beverages':      [2,   6],   // non-alcoholic: juice, soda, water
-      'Alcohol':        [11,  20],  // beer 6-pack, wine 750ml
+      'Produce':        [1.0, 3.5],  // kale $2, broccoli $2.50, apples $1.99/lb
+      'Dairy':          [2.5, 6.5],  // milk $3.99, cheese $4.99, yogurt $1.49
+      'Meat & Seafood': [5,   15],   // chicken $6.99/lb, ground beef $7.99/lb
+      'Pantry Staples': [1.5, 6],    // pasta $1.49, sauce $3.49, broth $2.99
+      'Snacks':         [2.5, 7],    // chips $3.99, crackers $3.49
+      'Beverages':      [2,   6],    // juice $4.99, soda $2.49, coffee $9.99 (12oz)
+      'Alcohol':        [11,  20],
       'Beer':           [11,  16],
       'Wine':           [10,  22],
-      'Frozen':         [4,   12],
-      'Bakery':         [3,   7],
+      'Frozen':         [3,   9],    // frozen pizza $5.99, waffles $3.99
+      'Bakery':         [2.5, 6],    // bread $3.99, rolls $3.49
       'Household':      [3,   12],
       'Personal Care':  [4,   14],
     };
 
-    // Keyword-based category override for items without proper category tags
+    // Keyword-based category detection — maps item names to accurate price ranges
     const categoryOverride = (item) => {
-      const name = item.name.toLowerCase();
-      if (name.includes('beer') || name.includes('lager') || name.includes('ale') || name.includes('ipa') || name.includes('seltzer')) return 'Beer';
-      if (name.includes('wine') || name.includes('champagne') || name.includes('prosecco') || name.includes('sparkling wine')) return 'Wine';
-      if (name.includes('whiskey') || name.includes('vodka') || name.includes('rum') || name.includes('tequila') || name.includes('liquor') || name.includes('spirits')) return 'Alcohol';
-      return item.category;
+      const n = item.name.toLowerCase();
+      // Alcohol first (specific ranges)
+      if (n.includes('beer') || n.includes('lager') || n.includes('ale') || n.includes('ipa') || n.includes('hard seltzer')) return 'Beer';
+      if (n.includes('wine') || n.includes('champagne') || n.includes('prosecco') || n.includes('sparkling wine')) return 'Wine';
+      if (n.includes('whiskey') || n.includes('vodka') || n.includes('rum') || n.includes('tequila') || n.includes('liquor')) return 'Alcohol';
+      // Produce keywords
+      if (n.match(/kale|spinach|lettuce|arugula|chard|cabbage|broccoli|cauliflower|celery|carrot|onion|garlic|potato|tomato|pepper|cucumber|zucchini|squash|asparagus|beet|radish|turnip|parsnip|leek|corn|pea|bean|edamame|avocado|apple|banana|orange|lemon|lime|grape|berry|berries|strawberr|blueberr|raspberr|blackberr|peach|pear|plum|mango|pineapple|watermelon|melon|cherry|apricot|fig|date|kiwi|pomegranate|grapefruit|tangerine|clementine|mandarin|mushroom|herb|basil|cilantro|parsley|mint|dill|thyme|rosemary|sage|ginger|scallion|chive/)) return 'Produce';
+      // Dairy
+      if (n.match(/milk|cheese|yogurt|skyr|butter|cream|sour cream|cottage|kefir|creamer|egg/)) return 'Dairy';
+      // Meat
+      if (n.match(/chicken|beef|steak|pork|lamb|turkey|salmon|shrimp|fish|tuna|cod|tilapia|sausage|bacon|ham|hot dog|bratwurst|brisket|ribs|veal|duck|crab|lobster|scallop|mussel|oyster/)) return 'Meat & Seafood';
+      // Frozen
+      if (n.match(/frozen|ice cream|popsicle|ice pop|waffle|pancake bites|nugget|fish stick|pizza|burrito|fries|tater|edamame/)) return 'Frozen';
+      // Bakery
+      if (n.match(/bread|bagel|muffin|croissant|roll|bun|tortilla|pita|naan|baguette|pretzel bites|pretzel bread/)) return 'Bakery';
+      // Snacks
+      if (n.match(/chip|cracker|pretzel|popcorn|granola bar|snack|cookie|candy|gummy|chocolate|nuts|trail mix|rice cake/)) return 'Snacks';
+      // Beverages
+      if (n.match(/juice|soda|water|seltzer|coffee|tea|kombucha|lemonade|gatorade|powerade|energy drink|coconut water/)) return 'Beverages';
+      // Pantry
+      if (n.match(/pasta|rice|flour|sugar|salt|sauce|broth|soup|bean|lentil|oil|vinegar|honey|syrup|peanut butter|jelly|jam|cereal|oat|grain|quinoa|couscous/)) return 'Pantry Staples';
+      // Household
+      if (n.match(/paper towel|toilet paper|trash bag|detergent|dish soap|sponge|foil|plastic wrap|zip|cleaning|bleach|fabric softener|dryer/)) return 'Household';
+      // Personal care
+      if (n.match(/shampoo|conditioner|body wash|soap|toothpaste|deodorant|razor|lotion|sunscreen|floss|mouthwash|wipe|diaper|vitamin/)) return 'Personal Care';
+      // Use provided category or default to Pantry Staples (not [2,8] unknown)
+      return item.category || 'Pantry Staples';
     };
 
     const estimatePrice = (item, mult = 1) => {
