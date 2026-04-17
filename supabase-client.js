@@ -19,7 +19,8 @@ const Auth = {
   },
   async signOut() { await sb.auth.signOut(); Router.go('auth'); },
   async getUser() { const { data: { user } } = await sb.auth.getUser(); return user; },
-  onAuthChange(cb) { sb.auth.onAuthStateChange(cb); }
+  onAuthChange(cb) { sb.auth.onAuthStateChange(cb); },
+  async getSession() { const { data: { session } } = await sb.auth.getSession(); return session; }
 };
 
 const DB = {

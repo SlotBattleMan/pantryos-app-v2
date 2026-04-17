@@ -3,7 +3,16 @@ const OnboardingView = {
   totalSteps: 4,
   data: {},
 
-  render() {
+  async render() {
+    // Guard: if user already has a household, skip onboarding entirely
+    const user = await Auth.getUser();
+    if (user) {
+      const { data: existing } = await DB.getHousehold(user.id);
+      if (existing) {
+        Router.go('dashboard');
+        return;
+      }
+    }
     this.step = 1;
     this.data = {};
     this.renderStep();
