@@ -33,6 +33,7 @@ const PantryView = {
     this.renderMain();
     this.loadWeeklyCartItems(); // auto-load from dashboard if coming via weekly cart
     this.loadSuggestions(); // non-blocking
+    this.checkAllergens(); // non-blocking allergen scan
   },
 
   renderNav() {
@@ -767,6 +768,68 @@ Cheddar cheese"></textarea>
     });
   },
 
+  async checkAllergens() {
+    const allergens = (this.household?.dietary || []).filter(d =>
+      d.includes('allergy') || d === 'Celiac disease' || d === 'Lactose intolerance'
+    );
+    if (!allergens.length || !this.items.length) return;
+
+    try {
+      const res = await fetch('/api/check-allergens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: this.items.slice(0, 15), allergens }), // first 15 to avoid rate limits
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const results = data.results || {};
+
+      // Flag items in the DOM
+      let flagCount = 0;
+      Object.entries(results).forEach(([name, result]) => {
+        if (result.status === 'unknown' || result.status === 'clear') return;
+        flagCount++;
+
+        // Find the item row
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+          const nameEl = row.querySelector('.item-name');
+          if (!nameEl) return;
+          if (nameEl.textContent.toLowerCase().trim() !== name.toLowerCase().trim()) return;
+
+          // Add allergen flag
+          const existing = row.querySelector('.allergen-flag');
+          if (existing) existing.remove();
+
+          const flag = document.createElement('div');
+          flag.className = `allergen-flag allergen-flag-${result.status}`;
+
+          if (result.status === 'contains') {
+            flag.innerHTML = `⚠️ <strong>Contains:</strong> ${result.contains.join(', ')} · <a href="${data.sourceUrl}" target="_blank" rel="noopener" class="allergen-src">Open Food Facts</a>`;
+          } else {
+            flag.innerHTML = `⚠️ <strong>May contain:</strong> ${result.mayContain.join(', ')} · <a href="${data.sourceUrl}" target="_blank" rel="noopener" class="allergen-src">Open Food Facts</a>`;
+          }
+          row.appendChild(flag);
+        });
+      });
+
+      if (flagCount > 0) {
+        const banner = document.createElement('div');
+        banner.className = 'allergen-scan-banner';
+        banner.innerHTML = `
+          <span class="allergen-scan-icon">⚠️</span>
+          <span>Allergen check complete — ${flagCount} item${flagCount !== 1 ? 's' : ''} flagged. Data from <a href="${data.sourceUrl}" target="_blank" rel="noopener">Open Food Facts</a>. Always verify on product packaging.</span>
+          <button class="wc-banner-dismiss" id="allergen-banner-dismiss">✕</button>
+        `;
+        const pantryContent = document.querySelector('.pantry-content');
+        if (pantryContent) pantryContent.insertBefore(banner, pantryContent.firstChild);
+        document.getElementById('allergen-banner-dismiss')?.addEventListener('click', () => banner.remove());
+      }
+    } catch (e) {
+      // non-critical, fail silently
+    }
+  },
+
   bindActions() {
     document.getElementById('add-item-btn').addEventListener('click', () => this.addItem());
     document.getElementById('item-name').addEventListener('keydown', e => { if (e.key === 'Enter') this.addItem(); });
@@ -1029,6 +1092,8 @@ Cheddar cheese"></textarea>
         setTimeout(() => {
           document.getElementById('scan-panel').classList.add('hidden');
           this.resetScanPanel();
+          // Re-run allergen check to flag any newly added items
+          this.checkAllergens();
         }, 2500);
       }
 
