@@ -314,10 +314,27 @@ Cheddar cheese"></textarea>
     `).join('');
   },
 
+  // Normalize item name to core term for brand pref lookup
+  // e.g. "Wegmans Vitamin D Whole Milk (1 gal)" -> "whole milk"
+  normalizePrefKey(name) {
+    return name.toLowerCase()
+      .replace(/wegmans|shoprite|stop & shop|acme|pepperidge farm|general mills|orville redenbacher|farmhouse|organic|family pack|family size|value size|large size|classic|baked snack|vitamin d|boneless skinless|raised without antibiotics/gi, '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/~\s*[\d.]+\s*(lb|oz|ct|gal|fl oz)/gi, '')
+      .replace(/[,.-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ').filter(w => w.length > 2).slice(0, 3).join(' ');
+  },
+
   renderItemRow(item, isSaved = false) {
     const id = item.id || item.tempId;
     const qty = item.quantity || 1;
-    const brandPrefRaw = this.household?.brand_preferences?.[item.name.toLowerCase()];
+    // Try exact key first, then normalized key
+    const exactKey = item.name.toLowerCase();
+    const normalizedKey = this.normalizePrefKey(item.name);
+    const brandPrefRaw = this.household?.brand_preferences?.[exactKey]
+      || this.household?.brand_preferences?.[normalizedKey];
     const brandPref = typeof brandPrefRaw === 'object' ? brandPrefRaw?.brand : brandPrefRaw;
     const flavorPref = typeof brandPrefRaw === 'object' ? brandPrefRaw?.flavor : null;
     const brandLabel = brandPref && brandPref !== 'any'
@@ -664,10 +681,15 @@ Cheddar cheese"></textarea>
 
     const savePref = async (brand, flavor) => {
       if (!this.household.brand_preferences) this.household.brand_preferences = {};
+      // Save under BOTH the exact key and normalized key so lookup always works
+      const normalizedKey = this.normalizePrefKey(itemName);
       if (!brand || brand === 'any') {
         delete this.household.brand_preferences[key];
+        delete this.household.brand_preferences[normalizedKey];
       } else {
-        this.household.brand_preferences[key] = flavor ? { brand, flavor } : brand;
+        const val = flavor ? { brand, flavor } : brand;
+        this.household.brand_preferences[key] = val;
+        if (normalizedKey !== key) this.household.brand_preferences[normalizedKey] = val;
       }
       await DB.saveBrandPreferences(this.household.id, this.household.brand_preferences);
 
