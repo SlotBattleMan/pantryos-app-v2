@@ -412,17 +412,21 @@ Cheddar cheese"></textarea>
     'laundry detergent': ['Original', 'Free & Gentle', 'Sport', 'Color', 'HE', 'Pods', 'Liquid', 'Powder'],
   },
 
-  // Allergy-safe brands by dietary need
-  allergyFriendlyBrands: {
-    'Gluten-free':      ['Bob\'s Red Mill', 'Enjoy Life', 'Udi\'s', 'Canyon Bakehouse', 'Schar', 'Banza', 'Jovial', 'Simple Mills'],
-    'Dairy-free':       ['Oatly', 'Silk', 'So Delicious', 'Violife', 'Miyoko\'s', 'Califia Farms', 'Earth Balance', 'Kite Hill'],
-    'Nut-free':         ['Old Thyme', 'Sunbutter', 'Wow Butter', 'Enjoy Life', 'Made Good', 'Simple Mills', 'Arnold', 'Pepperidge Farm', 'Martin\'s', 'Wonder', 'Nature\'s Own'],
-    'Peanut-free':      ['Old Thyme', 'Sunbutter', 'Almond Butter Co.', 'Justin\'s Almond', 'Wow Butter', 'Enjoy Life', 'Arnold', 'Pepperidge Farm', 'Martin\'s'],
-    'Tree-nut-free':    ['Old Thyme', 'Jif', 'Skippy', 'Sunbutter', 'Wow Butter', 'Enjoy Life', 'Made Good', 'Arnold', 'Pepperidge Farm'],
+  // Brands commonly associated with dietary needs — NOT allergen-verified.
+  // PantryOS does not certify any brand as allergen-safe.
+  // Users must always read product labels. Formulas and facilities change.
+  commonlyChosenBrands: {
+    'Peanut allergy':   ['Enjoy Life', 'SunButter', 'WowButter', 'MadeGood', 'Simple Mills'],
+    'Tree nut allergy': ['Enjoy Life', 'SunButter', 'WowButter', 'MadeGood', 'Simple Mills'],
+    'Milk allergy':     ['Oatly', 'Silk', 'So Delicious', 'Violife', 'Miyoko\'s', 'Califia Farms', 'Earth Balance'],
+    'Lactose intolerance': ['Lactaid', 'Fairlife', 'Green Valley Creamery', 'Organic Valley Lactose-Free'],
+    'Wheat allergy':    ['Bob\'s Red Mill', 'Enjoy Life', 'Udi\'s', 'Canyon Bakehouse', 'Schar', 'Banza'],
+    'Celiac disease':   ['Bob\'s Red Mill', 'Enjoy Life', 'Udi\'s', 'Canyon Bakehouse', 'Schar', 'Jovial', 'Simple Mills'],
+    'Egg allergy':      ['Bob\'s Red Mill', 'Enjoy Life', 'Simple Mills', 'Namaste Foods'],
+    'Soy allergy':      ['Enjoy Life', 'Simple Mills', 'MadeGood', 'Bob\'s Red Mill'],
+    'Sesame allergy':   ['Enjoy Life', 'Simple Mills', 'MadeGood'],
     'Vegan':            ['Miyoko\'s', 'Violife', 'So Delicious', 'Earth Balance', 'Oatly', 'Tofurky', 'Field Roast', 'Beyond Meat'],
     'Vegetarian':       ['Morningstar Farms', 'Gardein', 'Amy\'s', 'Boca', 'Field Roast', 'Beyond Meat'],
-    'Low-sodium':       ['Mrs. Dash', 'Herb-Ox', 'Pacific Foods Low Sodium', 'Swanson Natural Goodness'],
-    'Diabetic-friendly':['Lily\'s', 'Swerve', 'Bob\'s Red Mill', 'Nature\'s Own Double Fiber'],
   },
 
   async openBrandPicker(itemName, currentBrand, currentFlavor) {
@@ -622,16 +626,17 @@ Cheddar cheese"></textarea>
     }
     brands = brands || ['ShopRite', 'Wegmans', 'Stop & Shop', 'Acme Markets', 'Organic Valley'];
 
-    // Surface allergy-friendly brands at the top based on household dietary needs
+    // Surface commonly-chosen brands for household dietary needs at top
+    // NOTE: This does NOT verify allergen safety. Always read labels.
     const dietary = this.household?.dietary || [];
-    const safeBrands = new Set();
+    const commonBrands = new Set();
     dietary.forEach(d => {
-      (this.allergyFriendlyBrands[d] || []).forEach(b => safeBrands.add(b));
+      (this.commonlyChosenBrands[d] || []).forEach(b => commonBrands.add(b));
     });
-    if (safeBrands.size > 0) {
-      const safeInList = brands.filter(b => safeBrands.has(b));
-      const rest = brands.filter(b => !safeBrands.has(b));
-      brands = [...safeInList, ...rest];
+    if (commonBrands.size > 0) {
+      const commonInList = brands.filter(b => commonBrands.has(b));
+      const rest = brands.filter(b => !commonBrands.has(b));
+      brands = [...commonInList, ...rest];
     }
 
     // Check if this item has flavor options
@@ -659,12 +664,15 @@ Cheddar cheese"></textarea>
               <span class="brand-option-sub">Lowest available price</span>
             </button>
             ${brands.map(b => `
-              <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''} ${safeBrands.has(b) ? 'brand-option-safe' : ''}" data-brand="${b}">
+              <button class="brand-option-btn ${currentBrand === b ? 'brand-option-selected' : ''} ${commonBrands.has(b) ? 'brand-option-common' : ''}" data-brand="${b}">
                 <span class="brand-option-name">${b}</span>
-                ${safeBrands.has(b) ? `<span class="brand-safe-badge">✓ ${dietary.filter(d => (this.allergyFriendlyBrands[d]||[]).includes(b)).join(', ')}</span>` : ''}
+                ${commonBrands.has(b) ? '<span class="brand-common-badge">Commonly chosen</span>' : ''}
               </button>
             `).join('')}
           </div>
+          ${dietary.some(d => d.includes('allergy') || d === 'Celiac disease') ? `
+            <div class="brand-allergen-disclaimer">⚠️ Always read product labels. PantryOS does not verify allergen safety. Formulas and facilities change.</div>
+          ` : ''}
         </div>
         <div id="flavor-step" class="hidden">
           <p class="picker-step-label">Step 2 of 2 — Flavor / Type</p>

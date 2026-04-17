@@ -48,7 +48,7 @@ const SettingsView = {
   renderMain() {
     const h = this.household || {};
     const dietary = h.dietary || ['None'];
-    const restrictions = ['None','Vegetarian','Vegan','Gluten-free','Dairy-free','Nut-free','Peanut-free','Tree-nut-free','Kosher','Halal','Low-sodium','Diabetic-friendly'];
+    const restrictions = ['None','Vegetarian','Vegan','Low-sodium','Diabetic-friendly','Kosher','Halal','Peanut allergy','Tree nut allergy','Milk allergy','Lactose intolerance','Egg allergy','Wheat allergy','Celiac disease','Soy allergy','Fish allergy','Shellfish allergy','Sesame allergy'];
     const modes = [
       { id: 'cheapest', icon: '💰', label: 'Cheapest' },
       { id: 'balanced', icon: '⚖️', label: 'Best Balance' },

@@ -78,53 +78,71 @@ const OnboardingView = {
       };
 
     } else if (this.step === 2) {
+      // FDA Top 9 Major Allergens (per FASTER Act, effective Jan 1, 2023)
       const restrictions = [
         { val: 'None', label: 'None', group: null },
+        // Dietary preferences
         { val: 'Vegetarian', label: '🥦 Vegetarian', group: null },
         { val: 'Vegan', label: '🌱 Vegan', group: null },
-        { val: 'Gluten-free', label: '🌾 Gluten-free', group: 'gluten' },
-        { val: 'Dairy-free', label: '🥛 Dairy-free', group: 'dairy' },
-        { val: 'Nut-free', label: '🥜 Nut-free (all)', group: 'nuts' },
-        { val: 'Peanut-free', label: 'Peanut-free', group: 'nuts' },
-        { val: 'Tree-nut-free', label: 'Tree-nut-free', group: 'nuts' },
-        { val: 'Kosher', label: '✡️ Kosher', group: null },
-        { val: 'Halal', label: '☪️ Halal', group: null },
         { val: 'Low-sodium', label: '🧒 Low-sodium', group: null },
         { val: 'Diabetic-friendly', label: '📊 Diabetic-friendly', group: null },
+        { val: 'Kosher', label: '✡️ Kosher', group: null },
+        { val: 'Halal', label: '☪️ Halal', group: null },
+        // FDA Top 9 Allergens
+        { val: 'Peanut allergy', label: '🥜 Peanut allergy', group: 'nuts' },
+        { val: 'Tree nut allergy', label: '🌰 Tree nut allergy', group: 'nuts' },
+        { val: 'Milk allergy', label: '🥛 Milk / Dairy allergy', group: 'dairy' },
+        { val: 'Egg allergy', label: '🥚 Egg allergy', group: null },
+        { val: 'Wheat allergy', label: '🌾 Wheat / Gluten allergy', group: 'gluten' },
+        { val: 'Soy allergy', label: '🌱 Soy allergy', group: null },
+        { val: 'Fish allergy', label: '🐟 Fish allergy', group: null },
+        { val: 'Shellfish allergy', label: '🦐 Shellfish allergy', group: null },
+        { val: 'Sesame allergy', label: '🌿 Sesame allergy', group: null },
       ];
 
-      // Allergy expansion prompts
+      // Allergy expansion prompts for FDA Top 9
       const allergyExpansions = {
-        'Nut-free': {
-          question: 'Which nut allergies apply?',
-          sub: 'We’ll make sure to flag all relevant products.',
+        'Peanut allergy': {
+          question: 'Do you also need to avoid tree nuts?',
+          sub: 'Many people with peanut allergies also avoid tree nuts. Always check your doctor’s guidance.',
           options: [
-            { val: 'Nut-free', label: 'All nuts (peanuts + tree nuts)', recommended: true },
-            { val: 'Peanut-free', label: 'Peanuts only' },
-            { val: 'Tree-nut-free', label: 'Tree nuts only (almonds, cashews, walnuts, etc.)' },
+            { val: 'Peanut allergy', label: 'Peanuts only', recommended: true },
+            { val: 'Peanut allergy,Tree nut allergy', label: 'Peanuts + tree nuts (almonds, cashews, walnuts, etc.)' },
           ]
         },
-        'Gluten-free': {
-          question: 'How strict is your gluten-free diet?',
-          sub: 'This helps us pick the right products and brands.',
+        'Tree nut allergy': {
+          question: 'Do you also need to avoid peanuts?',
+          sub: 'Peanuts are legumes, not tree nuts — but cross-contamination is common. Check with your doctor.',
           options: [
-            { val: 'Gluten-free', label: 'Strict (celiac or high sensitivity)', recommended: true },
-            { val: 'Gluten-free', label: 'Preference (wheat-free but oats OK)' },
+            { val: 'Tree nut allergy', label: 'Tree nuts only', recommended: true },
+            { val: 'Peanut allergy,Tree nut allergy', label: 'Tree nuts + peanuts' },
           ]
         },
-        'Dairy-free': {
-          question: 'What’s your dairy restriction?',
-          sub: 'Some people avoid lactose but can handle butter or hard cheese.',
+        'Milk allergy': {
+          question: 'Is this a milk allergy or lactose intolerance?',
+          sub: 'These are different conditions. A milk allergy is an immune response; lactose intolerance is digestive.',
           options: [
-            { val: 'Dairy-free', label: 'Fully dairy-free (vegan, allergy)', recommended: true },
-            { val: 'Dairy-free', label: 'Lactose-free only (can have hard cheese/butter)' },
+            { val: 'Milk allergy', label: 'Milk allergy (avoid all dairy)', recommended: true },
+            { val: 'Lactose intolerance', label: 'Lactose intolerance (may tolerate hard cheese/butter)' },
+          ]
+        },
+        'Wheat allergy': {
+          question: 'Is this a wheat allergy or celiac disease?',
+          sub: 'Both require avoiding wheat, but celiac requires stricter cross-contamination controls.',
+          options: [
+            { val: 'Wheat allergy', label: 'Wheat allergy', recommended: true },
+            { val: 'Celiac disease', label: 'Celiac disease (strict gluten-free required)' },
           ]
         },
       };
 
       el.innerHTML = `
         <h2>Dietary needs & allergies</h2>
-        <p class="step-desc">Select all that apply — we’ll filter products and highlight safe options for your household.</p>
+        <p class="step-desc">Select all that apply. We use this to personalize your shopping list.</p>
+        <div class="allergen-disclaimer">
+          <span class="allergen-disclaimer-icon">⚠️</span>
+          <span>PantryOS does <strong>not</strong> verify allergen safety of specific products or brands. Always read product labels. Manufacturing facilities and formulas change. Consult your doctor or allergist for medical guidance.</span>
+        </div>
         <div class="chip-grid" id="dietary-chips">
           ${restrictions.map(r => `
             <button class="chip ${this.data.dietary?.includes(r.val) ? 'chip-active' : ''}" data-val="${r.val}" data-group="${r.group || ''}">${r.label}</button>
