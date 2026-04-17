@@ -4,17 +4,36 @@
 const DecisionEngine = {
   async run(items, household) {
     try {
-      // 12-second timeout on the server call
+      // Fast health check first — 3 second timeout
+      // If server returns mock:true immediately (e.g. OpenAI quota), skip straight to mock
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
+      const timeout = setTimeout(() => controller.abort(), 8000);
       const res = await fetch('/api/decision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, household }),
+        body: JSON.stringify({ items: items.slice(0, 3), household, quickCheck: true }),
         signal: controller.signal,
       });
       clearTimeout(timeout);
-      const data = await res.json();
+      const probe = await res.json();
+
+      // If server signals it can't handle real requests, go straight to mock
+      if (probe.mock || probe.error) {
+        console.warn('Server engine in mock mode, using local NJ engine:', probe.error);
+        return this.runMock(items, household);
+      }
+
+      // Server is healthy — run full request
+      const fullController = new AbortController();
+      const fullTimeout = setTimeout(() => fullController.abort(), 10000);
+      const fullRes = await fetch('/api/decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, household }),
+        signal: fullController.signal,
+      });
+      clearTimeout(fullTimeout);
+      const data = await fullRes.json();
       if (data.mock || data.error) throw new Error(data.error || 'mock');
       return data;
     } catch (err) {
@@ -29,7 +48,7 @@ const DecisionEngine = {
     let brandMap = {}; // item name → brand from ShopRite cache
     try {
       const priceController = new AbortController();
-      const priceTimeout = setTimeout(() => priceController.abort(), 5000);
+      const priceTimeout = setTimeout(() => priceController.abort(), 2500);
       const res = await fetch('/api/store-prices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

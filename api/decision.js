@@ -91,6 +91,24 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'AI engine not configured', mock: true });
   }
 
+  // Quick check mode — just verify OpenAI is available before committing to full run
+  const { quickCheck } = req.body || {};
+  if (quickCheck) {
+    // Do a minimal token call to verify quota
+    try {
+      const testRes = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      const testData = await testRes.json();
+      if (testData.error?.code === 'insufficient_quota' || !testRes.ok) {
+        return res.status(200).json({ mock: true, error: testData.error?.message || 'quota exceeded' });
+      }
+      return res.status(200).json({ ready: true });
+    } catch (e) {
+      return res.status(200).json({ mock: true, error: e.message });
+    }
+  }
+
   const { items, household } = req.body || {};
   if (!items || !household) {
     return res.status(400).json({ error: 'Missing items or household' });
